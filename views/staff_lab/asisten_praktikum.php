@@ -10,81 +10,16 @@ checkRole(['staff_lab', 'admin']);
 $database = new Database();
 $db = $database->getConnection();
 $asistenController = new AsistenPraktikumController($db);
-$praktikumModel = new PraktikumModel($db);
+
+// ✅ PERBAIKI: Constructor tanpa parameter
+$praktikumModel = new PraktikumModel();
 
 $page_title = "Manajemen Asisten Praktikum";
 $error = '';
 $success = '';
 
-// DEBUG: Cek struktur tabel jadwal_praktikum
-try {
-    $debugSql = "DESCRIBE jadwal_praktikum";
-    $debugStmt = $db->query($debugSql);
-    $tableStructure = $debugStmt->fetchAll(PDO::FETCH_ASSOC);
-    
-    // Cari kolom nama praktikum
-    $namaPraktikumColumn = '';
-    foreach ($tableStructure as $column) {
-        $field = $column['Field'];
-        if (stripos($field, 'nama') !== false && 
-            (stripos($field, 'mk') !== false || stripos($field, 'matkul') !== false || stripos($field, 'praktikum') !== false)) {
-            $namaPraktikumColumn = $field;
-            break;
-        }
-    }
-    
-    // Jika tidak ditemukan, coba kolom lain
-    if (!$namaPraktikumColumn) {
-        foreach ($tableStructure as $column) {
-            $field = $column['Field'];
-            if (stripos($field, 'nama') !== false) {
-                $namaPraktikumColumn = $field;
-                break;
-            }
-        }
-    }
-    
-    // Query data praktikum
-    if ($namaPraktikumColumn) {
-        $debugSql = "SELECT id, $namaPraktikumColumn as nama_praktikum, kelas, tahun_ajaran, status 
-                     FROM jadwal_praktikum 
-                     ORDER BY tahun_ajaran DESC, $namaPraktikumColumn";
-    } else {
-        // Fallback - tampilkan semua kolom
-        $debugSql = "SELECT * FROM jadwal_praktikum ORDER BY tahun_ajaran DESC LIMIT 10";
-    }
-    
-    $debugStmt = $db->query($debugSql);
-    $allPraktikum = $debugStmt->fetchAll(PDO::FETCH_ASSOC);
-    
-} catch (PDOException $e) {
-    error_log("Debug error: " . $e->getMessage());
-    $allPraktikum = [];
-}
-
-// Handle form actions
-if ($_POST) {
-    if (isset($_POST['tambah_asisten'])) {
-        $result = $asistenController->createAsisten($_POST);
-        if ($result['success']) {
-            $success = $result['message'];
-            echo '<script>window.location.href = "asisten_praktikum.php?status=success&message=' . urlencode($result['message']) . '";</script>';
-            exit;
-        } else {
-            $error = is_array($result['errors']) ? implode('<br>', $result['errors']) : $result['message'];
-        }
-    } elseif (isset($_POST['edit_asisten'])) {
-        $id = $_POST['id'];
-        $result = $asistenController->updateAsisten($id, $_POST);
-        if ($result['success']) {
-            $success = $result['message'];
-            echo '<script>window.location.href = "asisten_praktikum.php?status=success&message=' . urlencode($result['message']) . '";</script>';
-            exit;
-        } else {
-            $error = is_array($result['errors']) ? implode('<br>', $result['errors']) : $result['message'];
-        }
-    }
-}
+// Hapus bagian debug yang error
+// $debugSql = "DESCRIBE jadwal_praktikum"; // Ini penyebab error
 
 // Handle form actions
 if ($_POST) {
@@ -168,14 +103,6 @@ $praktikumList = $asistenController->getAllPraktikum();
 
     <section class="content">
         <div class="container-fluid">
-            <!-- DEBUG INFO -->
-            <div class="alert alert-info d-none">
-                <strong>DEBUG - Data jadwal_praktikum yang tersedia:</strong>
-                <?php foreach ($allPraktikum as $p): ?>
-                    <br>ID: <?= $p['id'] ?> - <?= $p['nama_praktikum'] ?> - Kelas <?= $p['kelas'] ?> - <?= $p['tahun_ajaran'] ?> - Status: <?= $p['status'] ?>
-                <?php endforeach; ?>
-            </div>
-
             <!-- Notifications -->
             <?php if ($error): ?>
                 <div class="alert alert-danger alert-dismissible">
@@ -467,42 +394,89 @@ $praktikumList = $asistenController->getAllPraktikum();
         });
     });
 
-    // Load praktikum berdasarkan tahun ajaran (manual input)
-// Simple fallback dalam JavaScript
-document.getElementById('tahun_ajaran_input').addEventListener('input', function() {
-    const tahunAjaran = this.value.trim();
-    const praktikumSelect = document.getElementById('praktikum_id');
-    
-    if (tahunAjaran.length >= 9 && tahunAjaran.includes('/')) {
-        praktikumSelect.disabled = false;
+    // ✅ PERBAIKI: Load praktikum DINAMIS dari database
+    document.getElementById('tahun_ajaran_input').addEventListener('input', function() {
+        const tahunAjaran = this.value.trim();
+        const praktikumSelect = document.getElementById('praktikum_id');
         
-        // Static data for testing
-        const staticData = [
-            {id: 1, nama_praktikum: 'Prak. Algoritma & Struktur Data', kelas: 'A'},
-            {id: 2, nama_praktikum: 'Prak. Basis Data', kelas: 'B'},
-            {id: 3, nama_praktikum: 'Prak. Pemrograman Web', kelas: 'C'}
-        ];
+        console.log('Tahun ajaran input:', tahunAjaran);
         
-        praktikumSelect.innerHTML = '<option value="">-- Pilih Praktikum --</option>';
-        staticData.forEach(praktikum => {
-            const option = new Option(
-                `${praktikum.nama_praktikum} (Kelas ${praktikum.kelas})`,
-                praktikum.id
-            );
-            option.setAttribute('data-nama-praktikum', praktikum.nama_praktikum);
-            praktikumSelect.add(option);
-        });
-        
-        $(praktikumSelect).trigger('change.select2');
-        showNotification('Data praktikum loaded (static)', 'info');
-    } else {
-        praktikumSelect.disabled = true;
-        praktikumSelect.innerHTML = '<option value="">-- Ketik tahun ajaran dulu --</option>';
-        $(praktikumSelect).trigger('change.select2');
-    }
-});
+        // Validasi format tahun ajaran (minimal 9 karakter: 2023/2024)
+        if (tahunAjaran.length >= 9 && tahunAjaran.includes('/')) {
+            // Enable select
+            praktikumSelect.disabled = false;
+            praktikumSelect.innerHTML = '<option value="">Loading...</option>';
+            
+            console.log('Fetching praktikum for tahun:', tahunAjaran);
+            
+            // Load data praktikum via AJAX
+            fetch(`get_praktikum_by_tahun.php?tahun_ajaran=${encodeURIComponent(tahunAjaran)}`)
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Praktikum data received:', data);
+                    
+                    // Handle error response
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+                    
+                    praktikumSelect.innerHTML = '<option value="">-- Pilih Praktikum --</option>';
+                    
+                    if (data.length === 0) {
+                        praktikumSelect.innerHTML = '<option value="">-- Tidak ada praktikum untuk tahun ini --</option>';
+                        showNotification('Tidak ada praktikum yang tersedia untuk tahun ajaran ' + tahunAjaran, 'warning');
+                    } else {
+                        data.forEach(praktikum => {
+                            const option = new Option(
+                                `${praktikum.nama_praktikum} (Kelas ${praktikum.kelas})`,
+                                praktikum.id
+                            );
+                            option.setAttribute('data-nama-praktikum', praktikum.nama_praktikum);
+                            option.setAttribute('data-kelas', praktikum.kelas); // Simpan kelas untuk auto-fill
+                            praktikumSelect.add(option);
+                        });
+                        showNotification(`Ditemukan ${data.length} praktikum untuk tahun ${tahunAjaran}`, 'success');
+                    }
+                    
+                    // Re-initialize Select2
+                    $(praktikumSelect).trigger('change.select2');
+                    
+                })
+                .catch(error => {
+                    console.error('Error loading praktikum:', error);
+                    praktikumSelect.innerHTML = '<option value="">-- Error loading data --</option>';
+                    showNotification('Error loading praktikum data: ' + error.message, 'danger');
+                });
+        } else {
+            praktikumSelect.disabled = true;
+            praktikumSelect.innerHTML = '<option value="">-- Ketik tahun ajaran dulu --</option>';
+            $(praktikumSelect).trigger('change.select2');
+        }
+    });
 
-    // Auto-format tahun ajaran dan set nama praktikum
+    // ✅ PERBAIKI: Auto-fill kelas ketika praktikum dipilih
+    document.getElementById('praktikum_id').addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        const namaPraktikum = selectedOption.getAttribute('data-nama-praktikum') || '';
+        const kelas = selectedOption.getAttribute('data-kelas') || 'A';
+        
+        document.getElementById('nama_praktikum').value = namaPraktikum;
+        
+        // ✅ AUTO-FILL KELAS
+        const kelasSelect = document.getElementById('kelas');
+        if (kelas && kelasSelect) {
+            kelasSelect.value = kelas;
+            showNotification(`Kelas otomatis diisi: ${kelas}`, 'info');
+        }
+    });
+
+    // Auto-format tahun ajaran
     document.getElementById('tahun_ajaran_input').addEventListener('blur', function() {
         let value = this.value.trim();
         
@@ -523,13 +497,6 @@ document.getElementById('tahun_ajaran_input').addEventListener('input', function
             // Trigger load praktikum
             this.dispatchEvent(new Event('input'));
         }
-    });
-
-    // Set nama praktikum ketika praktikum dipilih
-    document.getElementById('praktikum_id').addEventListener('change', function() {
-        const selectedOption = this.options[this.selectedIndex];
-        const namaPraktikum = selectedOption.getAttribute('data-nama-praktikum') || '';
-        document.getElementById('nama_praktikum').value = namaPraktikum;
     });
 
     // Search functionality
@@ -646,6 +613,7 @@ document.getElementById('tahun_ajaran_input').addEventListener('input', function
         const tahunAjaran = '<?php echo $editData['tahun_ajaran']; ?>';
         const praktikumId = '<?php echo $editData['praktikum_id']; ?>';
         const namaPraktikum = '<?php echo $editData['nama_praktikum']; ?>';
+        const kelas = '<?php echo $editData['kelas']; ?>';
         
         if (tahunAjaran) {
             document.getElementById('tahun_ajaran_input').value = tahunAjaran;
@@ -657,6 +625,7 @@ document.getElementById('tahun_ajaran_input').addEventListener('input', function
                 setTimeout(() => {
                     document.getElementById('praktikum_id').value = praktikumId;
                     document.getElementById('nama_praktikum').value = namaPraktikum;
+                    document.getElementById('kelas').value = kelas;
                     $(document.getElementById('praktikum_id')).trigger('change.select2');
                 }, 1000);
             }, 500);
