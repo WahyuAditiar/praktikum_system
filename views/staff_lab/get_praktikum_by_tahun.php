@@ -1,38 +1,40 @@
 <?php
-// views/staff_lab/get_praktikum_by_tahun.php
-
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
 require_once __DIR__ . '/../../config/config.php';
-require_once __DIR__ . '/../../models/PraktikumModel.php';
 
-// CORS headers untuk development
-header('Access-Control-Allow-Origin: *');
 header('Content-Type: application/json');
 
 if (isset($_GET['tahun_ajaran'])) {
     $tahunAjaran = $_GET['tahun_ajaran'];
-    
-    error_log("AJAX Request - Tahun Ajaran: " . $tahunAjaran);
-    
+
     try {
-        // ✅ GUNAKAN CONSTRUCTOR TANPA PARAMETER
-        $praktikumModel = new PraktikumModel();
-        $praktikumList = $praktikumModel->getByTahunAjaran($tahunAjaran);
-        
-        error_log("AJAX Response - Records found: " . count($praktikumList));
-        
+        $pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+        // ✅ Query ambil nama praktikum dan kelas (tahun_ajaran ambil dari tabel `praktikum`)
+        $sql = "
+            SELECT 
+                jp.id AS jadwal_id,
+                jp.kelas AS kelas,
+                p.id AS praktikum_id,
+                p.nama_praktikum,
+                p.tahun_ajaran
+            FROM jadwal_praktikum jp
+            INNER JOIN praktikum p ON p.id = jp.praktikum_id
+            WHERE p.tahun_ajaran = :tahun_ajaran
+            ORDER BY p.nama_praktikum ASC, jp.kelas ASC
+        ";
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->bindParam(':tahun_ajaran', $tahunAjaran);
+        $stmt->execute();
+
+        $praktikumList = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
         echo json_encode($praktikumList);
-        
-    } catch (Exception $e) {
-        error_log("AJAX Error: " . $e->getMessage());
-        http_response_code(500);
+    } catch (PDOException $e) {
         echo json_encode(['error' => $e->getMessage()]);
     }
     exit;
 }
 
-// Default empty response
 echo json_encode([]);

@@ -11,15 +11,10 @@ $database = new Database();
 $db = $database->getConnection();
 $asistenController = new AsistenPraktikumController($db);
 
-// ✅ PERBAIKI: Constructor tanpa parameter
 $praktikumModel = new PraktikumModel();
-
 $page_title = "Manajemen Asisten Praktikum";
 $error = '';
 $success = '';
-
-// Hapus bagian debug yang error
-// $debugSql = "DESCRIBE jadwal_praktikum"; // Ini penyebab error
 
 // Handle form actions
 if ($_POST) {
@@ -206,38 +201,65 @@ $praktikumList = $asistenController->getAllPraktikum();
                                         placeholder="Nama lengkap asisten" required>
                                 </div>
 
-                                <!-- TAHUN AJARAN MANUAL INPUT -->
+                                <!-- TAHUN AJARAN -->
                                 <div class="form-group">
-                                    <label for="tahun_ajaran_input">Tahun Ajaran <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="tahun_ajaran_input" name="tahun_ajaran"
+                                    <label for="tahun_ajaran">Tahun Ajaran <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="tahun_ajaran" name="tahun_ajaran"
                                         value="<?php echo $editData ? htmlspecialchars($editData['tahun_ajaran']) : ''; ?>"
                                         placeholder="Contoh: 2023/2024" required>
-                                    <small class="form-text text-muted">Format: Tahun/Tahun (contoh: 2023/2024)</small>
                                 </div>
 
-                                <!-- PRAKTIKUM (akan di-load berdasarkan tahun ajaran) -->
+                                <!-- PRAKTIKUM -->
                                 <div class="form-group">
                                     <label for="praktikum_id">Praktikum <span class="text-danger">*</span></label>
-                                    <select class="form-control select2" id="praktikum_id" name="praktikum_id" required style="width: 100%;" disabled>
-                                        <option value="">-- Ketik tahun ajaran dulu --</option>
+                                    <select id="praktikum_id" name="praktikum_id" class="form-control select2" required>
+                                        <option value="">-- Pilih Praktikum --</option>
+                                        <?php if (!empty($praktikumList)): ?>
+                                            <?php foreach ($praktikumList as $p): 
+                                                // Data dari model
+                                                $id_praktikum   = $p['praktikum_id'] ?? $p['id'] ?? '';
+                                                $nama_praktikum = $p['nama_praktikum'] ?? 'Tidak diketahui';
+                                                $kelas          = $p['kelas'] ?? 'A';
+                                                $tahun_ajaran   = $p['tahun_ajaran'] ?? '-';
+
+                                                // Tandai jika sedang mode edit
+                                                $selected = (!empty($editData) && isset($editData['praktikum_id']) && $editData['praktikum_id'] == $id_praktikum) ? 'selected' : '';
+                                            ?>
+                                                <option 
+                                                    value="<?= htmlspecialchars($id_praktikum) ?>"
+                                                    data-nama-praktikum="<?= htmlspecialchars($nama_praktikum) ?>"
+                                                    data-kelas="<?= htmlspecialchars($kelas) ?>"
+                                                    data-tahun-ajaran="<?= htmlspecialchars($tahun_ajaran) ?>"
+                                                    <?= $selected ?>
+                                                >
+                                                    <?= htmlspecialchars($nama_praktikum) ?> — <?= htmlspecialchars($tahun_ajaran) ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        <?php else: ?>
+                                            <option value="">❌ Tidak ada data praktikum</option>
+                                        <?php endif; ?>
                                     </select>
-                                    <input type="hidden" id="nama_praktikum" name="nama_praktikum">
+
+                                    <!-- Hidden input untuk nama_praktikum -->
+                                    <input type="hidden" id="nama_praktikum" name="nama_praktikum"
+                                        value="<?php echo $editData ? htmlspecialchars($editData['nama_praktikum']) : ''; ?>">
                                 </div>
 
-                                <div class="form-group">
-                                    <label for="kelas">Kelas <span class="text-danger">*</span></label>
-                                    <select class="form-control" id="kelas" name="kelas" required>
-                                        <option value="">Pilih Kelas</option>
-                                        <option value="A" <?php echo ($editData && $editData['kelas'] == 'A') ? 'selected' : ''; ?>>A</option>
-                                        <option value="B" <?php echo ($editData && $editData['kelas'] == 'B') ? 'selected' : ''; ?>>B</option>
-                                        <option value="C" <?php echo ($editData && $editData['kelas'] == 'C') ? 'selected' : ''; ?>>C</option>
-                                        <option value="D" <?php echo ($editData && $editData['kelas'] == 'D') ? 'selected' : ''; ?>>D</option>
-                                        <option value="E" <?php echo ($editData && $editData['kelas'] == 'E') ? 'selected' : ''; ?>>E</option>
-                                        <option value="F" <?php echo ($editData && $editData['kelas'] == 'F') ? 'selected' : ''; ?>>F</option>
-                                        <option value="G" <?php echo ($editData && $editData['kelas'] == 'G') ? 'selected' : ''; ?>>G</option>
-                                        <option value="H" <?php echo ($editData && $editData['kelas'] == 'H') ? 'selected' : ''; ?>>H</option>
-                                    </select>
-                                </div>
+                               <!-- KELAS - AKAN TERISI OTOMATIS -->
+<div class="form-group">
+    <label for="kelas">Kelas <span class="text-danger">*</span></label>
+    <input type="text" 
+           class="form-control" 
+           id="kelas" 
+           name="kelas"
+           value="<?php echo $editData ? htmlspecialchars($editData['kelas']) : ''; ?>"
+           placeholder="Kelas akan terisi otomatis"
+           required>
+    <small class="form-text text-muted">
+        Pilih praktikum terlebih dahulu, kelas akan terisi otomatis.
+    </small>
+</div>
+
 
                                 <div class="form-group">
                                     <label for="semester">Semester <span class="text-danger">*</span></label>
@@ -271,6 +293,23 @@ $praktikumList = $asistenController->getAllPraktikum();
                                     <?php endif; ?>
                                 </div>
                             </form>
+                        </div>
+                        
+                        <!-- DEBUG BUTTON -->
+                        <div class="card-footer">
+                            <div class="row">
+                                <div class="col-6">
+                                    <button type="button" class="btn btn-sm btn-outline-info btn-block" onclick="testAutoFill()">
+                                        <i class="fas fa-bug mr-1"></i> Test Auto Fill
+                                    </button>
+                                </div>
+                                <div class="col-6">
+                                    <button type="button" class="btn btn-sm btn-outline-warning btn-block" onclick="console.log(document.getElementById('praktikum_id').options)">
+                                        <i class="fas fa-code mr-1"></i> Console Log
+                                    </button>
+                                </div>
+                            </div>
+                            <small class="text-muted mt-2 d-block">Debug tools - bisa dihapus setelah fix</small>
                         </div>
                     </div>
                 </div>
@@ -386,250 +425,169 @@ $praktikumList = $asistenController->getAllPraktikum();
 </style>
 
 <script>
-    // Initialize Select2
-    $(document).ready(function() {
-        $('.select2').select2({
-            theme: 'bootstrap4',
-            width: '100%'
-        });
+$(document).ready(function() {
+    // Inisialisasi Select2
+    $('.select2').select2({
+        theme: 'bootstrap4',
+        width: '100%'
     });
 
-    // ✅ PERBAIKI: Load praktikum DINAMIS dari database
-    document.getElementById('tahun_ajaran_input').addEventListener('input', function() {
-        const tahunAjaran = this.value.trim();
-        const praktikumSelect = document.getElementById('praktikum_id');
+    // Element references
+    const praktikumSelect = document.getElementById('praktikum_id');
+    const namaPraktikumInput = document.getElementById('nama_praktikum');
+    const kelasInput = document.getElementById('kelas');
+    const tahunAjaranInput = document.getElementById('tahun_ajaran');
+
+    // Simple notification function
+    function showNotification(message, type = 'info') {
+        // Remove existing notifications
+        $('.auto-notification').remove();
         
-        console.log('Tahun ajaran input:', tahunAjaran);
+        const alertClass = {
+            'success': 'alert-success',
+            'warning': 'alert-warning', 
+            'info': 'alert-info',
+            'danger': 'alert-danger'
+        }[type] || 'alert-info';
+
+        const notification = $(`
+            <div class="alert ${alertClass} auto-notification alert-dismissible" 
+                 style="position: fixed; top: 80px; right: 20px; z-index: 9999; min-width: 300px;">
+                <button type="button" class="close" data-dismiss="alert">&times;</button>
+                <i class="fas fa-info-circle mr-2"></i>${message}
+            </div>
+        `);
         
-        // Validasi format tahun ajaran (minimal 9 karakter: 2023/2024)
-        if (tahunAjaran.length >= 9 && tahunAjaran.includes('/')) {
-            // Enable select
-            praktikumSelect.disabled = false;
-            praktikumSelect.innerHTML = '<option value="">Loading...</option>';
-            
-            console.log('Fetching praktikum for tahun:', tahunAjaran);
-            
-            // Load data praktikum via AJAX
-            fetch(`get_praktikum_by_tahun.php?tahun_ajaran=${encodeURIComponent(tahunAjaran)}`)
-                .then(response => {
-                    console.log('Response status:', response.status);
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    console.log('Praktikum data received:', data);
-                    
-                    // Handle error response
-                    if (data.error) {
-                        throw new Error(data.error);
-                    }
-                    
-                    praktikumSelect.innerHTML = '<option value="">-- Pilih Praktikum --</option>';
-                    
-                    if (data.length === 0) {
-                        praktikumSelect.innerHTML = '<option value="">-- Tidak ada praktikum untuk tahun ini --</option>';
-                        showNotification('Tidak ada praktikum yang tersedia untuk tahun ajaran ' + tahunAjaran, 'warning');
-                    } else {
-                        data.forEach(praktikum => {
-                            const option = new Option(
-                                `${praktikum.nama_praktikum} (Kelas ${praktikum.kelas})`,
-                                praktikum.id
-                            );
-                            option.setAttribute('data-nama-praktikum', praktikum.nama_praktikum);
-                            option.setAttribute('data-kelas', praktikum.kelas); // Simpan kelas untuk auto-fill
-                            praktikumSelect.add(option);
-                        });
-                        showNotification(`Ditemukan ${data.length} praktikum untuk tahun ${tahunAjaran}`, 'success');
-                    }
-                    
-                    // Re-initialize Select2
-                    $(praktikumSelect).trigger('change.select2');
-                    
-                })
-                .catch(error => {
-                    console.error('Error loading praktikum:', error);
-                    praktikumSelect.innerHTML = '<option value="">-- Error loading data --</option>';
-                    showNotification('Error loading praktikum data: ' + error.message, 'danger');
-                });
-        } else {
-            praktikumSelect.disabled = true;
-            praktikumSelect.innerHTML = '<option value="">-- Ketik tahun ajaran dulu --</option>';
-            $(praktikumSelect).trigger('change.select2');
+        $('body').append(notification);
+        
+        // Auto remove after 4 seconds
+        setTimeout(() => {
+            notification.alert('close');
+        }, 4000);
+    }
+
+    // ✅ FIXED: Auto-fill function - SIMPLE & WORKING
+    function autoFillPraktikumData() {
+        const selectedOption = praktikumSelect.options[praktikumSelect.selectedIndex];
+        
+        console.log('🔄 Auto-fill triggered');
+        console.log('Selected option:', selectedOption);
+
+        if (!selectedOption || selectedOption.value === '') {
+            // Reset if no selection
+            namaPraktikumInput.value = '';
+            kelasInput.value = '';
+            return;
         }
-    });
 
-    // ✅ PERBAIKI: Auto-fill kelas ketika praktikum dipilih
-    document.getElementById('praktikum_id').addEventListener('change', function() {
-        const selectedOption = this.options[this.selectedIndex];
+        // Get data from data attributes - FIXED METHOD
         const namaPraktikum = selectedOption.getAttribute('data-nama-praktikum') || '';
         const kelas = selectedOption.getAttribute('data-kelas') || 'A';
-        
-        document.getElementById('nama_praktikum').value = namaPraktikum;
-        
-        // ✅ AUTO-FILL KELAS
-        const kelasSelect = document.getElementById('kelas');
-        if (kelas && kelasSelect) {
-            kelasSelect.value = kelas;
-            showNotification(`Kelas otomatis diisi: ${kelas}`, 'info');
-        }
-    });
+        const tahunAjaran = selectedOption.getAttribute('data-tahun-ajaran') || '';
 
-    // Auto-format tahun ajaran
-    document.getElementById('tahun_ajaran_input').addEventListener('blur', function() {
-        let value = this.value.trim();
-        
-        // Auto-format: 20232024 -> 2023/2024
-        if (value.length === 8 && !value.includes('/')) {
-            value = value.substring(0, 4) + '/' + value.substring(4);
-            this.value = value;
+        console.log('📊 Data from option:', { namaPraktikum, kelas, tahunAjaran });
+
+        // Fill the fields
+        namaPraktikumInput.value = namaPraktikum;
+        kelasInput.value = kelas;
+        tahunAjaranInput.value = tahunAjaran;
+
+        // Show success message
+        showNotification(
+            `✅ ${namaPraktikum} - Kelas ${kelas} - ${tahunAjaran}`,
+            'success'
+        );
+    }
+
+    // ✅ FIXED: Event listeners - MULTIPLE METHODS
+    // Method 1: Direct event listener
+    praktikumSelect.addEventListener('change', autoFillPraktikumData);
+    
+    // Method 2: jQuery event listener for Select2
+    $(praktikumSelect).on('change', autoFillPraktikumData);
+    
+    // Method 3: Also listen for Select2 change
+    $(praktikumSelect).on('select2:select', autoFillPraktikumData);
+
+    // Suggest kelas function
+    window.suggestKelas = function() {
+        if (!praktikumSelect.value) {
+            showNotification('Pilih praktikum terlebih dahulu!', 'warning');
+            return;
         }
+
+        const currentKelas = kelasInput.value;
+        const kelasOptions = ['A', 'B', 'C', 'D', 'E', 'F'];
         
-        // Validasi format
-        const tahunRegex = /^\d{4}\/\d{4}$/;
-        if (!tahunRegex.test(value)) {
-            this.classList.add('is-invalid');
-            showNotification('Format tahun ajaran harus: Tahun/Tahun (contoh: 2023/2024)', 'warning');
+        if (!currentKelas) {
+            kelasInput.value = 'A';
         } else {
-            this.classList.remove('is-invalid');
-            this.classList.add('is-valid');
-            // Trigger load praktikum
-            this.dispatchEvent(new Event('input'));
+            const currentIndex = kelasOptions.indexOf(currentKelas);
+            const nextIndex = (currentIndex + 1) % kelasOptions.length;
+            kelasInput.value = kelasOptions[nextIndex];
         }
+        
+        showNotification(`Kelas ${kelasInput.value} disarankan`, 'info');
+    };
+
+    // ✅ FIXED: Edit mode auto-fill
+    <?php if (!empty($editData)): ?>
+    setTimeout(() => {
+        console.log('📝 Edit mode - Auto filling data');
+        autoFillPraktikumData();
+    }, 500);
+    <?php endif; ?>
+
+    // Form validation
+    $('#asistenForm').on('submit', function(e) {
+        if (!praktikumSelect.value) {
+            e.preventDefault();
+            showNotification('Pilih praktikum terlebih dahulu!', 'danger');
+            return;
+        }
+        
+        if (!kelasInput.value.trim()) {
+            e.preventDefault();
+            showNotification('Kelas harus diisi!', 'danger');
+            return;
+        }
+
+        showNotification('Menyimpan data asisten...', 'info');
     });
 
     // Search functionality
-    document.getElementById('searchInput').addEventListener('keyup', function() {
-        const searchText = this.value.toLowerCase();
-        const rows = document.querySelectorAll('tbody tr');
-
-        rows.forEach(row => {
-            const text = row.textContent.toLowerCase();
-            row.style.display = text.includes(searchText) ? '' : 'none';
+    $('#searchInput').on('keyup', function() {
+        const value = $(this).val().toLowerCase();
+        $('table tbody tr').filter(function() {
+            $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
         });
     });
 
-    // Form validation
-    document.getElementById('asistenForm').addEventListener('submit', function(e) {
-        const nim = document.getElementById('nim').value;
-        const tahunAjaran = document.getElementById('tahun_ajaran_input').value;
-        const praktikumId = document.getElementById('praktikum_id').value;
-
-        // Validate NIM (only numbers)
-        if (!/^\d+$/.test(nim)) {
-            e.preventDefault();
-            alert('NIM harus berupa angka saja');
-            return false;
-        }
-
-        // Validate tahun ajaran format
-        const tahunRegex = /^\d{4}\/\d{4}$/;
-        if (!tahunRegex.test(tahunAjaran)) {
-            e.preventDefault();
-            alert('Format tahun ajaran harus: Tahun/Tahun (contoh: 2023/2024)');
-            document.getElementById('tahun_ajaran_input').focus();
-            return false;
-        }
-
-        // Validate praktikum is selected
-        if (!praktikumId) {
-            e.preventDefault();
-            alert('Silakan pilih praktikum');
-            document.getElementById('praktikum_id').focus();
-            return false;
-        }
-
-        return true;
-    });
-
-    function exportToExcel() {
-        let table = document.querySelector('table');
-        let html = table.outerHTML;
-        let url = 'data:application/vnd.ms-excel,' + escape(html);
-        let link = document.createElement('a');
-        link.href = url;
-        link.download = 'data_asisten_praktikum.xls';
-        link.click();
-    }
-
-    // Auto-format NIM to numbers only
-    document.getElementById('nim').addEventListener('input', function(e) {
-        this.value = this.value.replace(/\D/g, '');
-    });
-
-    function confirmDelete(nama) {
-        return confirm('PERINGATAN: Data asisten akan dihapus secara PERMANEN dan tidak dapat dikembalikan!\n\nYakin hapus asisten ' + nama + '?');
-    }
-
-    function showNotification(message, type = 'info') {
-        // Remove existing notifications
-        const existingNotifications = document.querySelectorAll('.auto-notification');
-        existingNotifications.forEach(notif => notif.remove());
-
-        // Create new notification
-        const notification = document.createElement('div');
-        notification.className = `alert alert-${type} auto-notification`;
-        notification.style.cssText = `
-            position: fixed;
-            top: 80px;
-            right: 20px;
-            z-index: 9999;
-            min-width: 300px;
-            max-width: 500px;
-        `;
-        notification.innerHTML = `
-            <button type="button" class="close" onclick="this.parentElement.remove()">
-                <span>&times;</span>
-            </button>
-            <i class="fas fa-${getNotificationIcon(type)} mr-2"></i>
-            ${message}
-        `;
-
-        document.body.appendChild(notification);
-
-        // Auto remove after 5 seconds
-        setTimeout(() => {
-            if (notification.parentNode) {
-                notification.remove();
-            }
-        }, 5000);
-    }
-
-    function getNotificationIcon(type) {
-        const icons = {
-            'success': 'check-circle',
-            'warning': 'exclamation-triangle',
-            'info': 'info-circle',
-            'danger': 'times-circle'
-        };
-        return icons[type] || 'info-circle';
-    }
-
-    // Pre-fill data for edit mode
-    <?php if ($editData): ?>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Trigger load praktikum for edit mode
-        const tahunAjaran = '<?php echo $editData['tahun_ajaran']; ?>';
-        const praktikumId = '<?php echo $editData['praktikum_id']; ?>';
-        const namaPraktikum = '<?php echo $editData['nama_praktikum']; ?>';
-        const kelas = '<?php echo $editData['kelas']; ?>';
+    // ✅ DEBUG: Test function
+    window.testAutoFill = function() {
+        console.log('🧪 Testing auto-fill function');
+        console.log('Available options:', praktikumSelect.options.length);
         
-        if (tahunAjaran) {
-            document.getElementById('tahun_ajaran_input').value = tahunAjaran;
-            // Trigger load praktikum
-            setTimeout(() => {
-                document.getElementById('tahun_ajaran_input').dispatchEvent(new Event('input'));
-                
-                // Set praktikum after loading
-                setTimeout(() => {
-                    document.getElementById('praktikum_id').value = praktikumId;
-                    document.getElementById('nama_praktikum').value = namaPraktikum;
-                    document.getElementById('kelas').value = kelas;
-                    $(document.getElementById('praktikum_id')).trigger('change.select2');
-                }, 1000);
-            }, 500);
+        if (praktikumSelect.options.length > 1) {
+            praktikumSelect.selectedIndex = 1;
+            autoFillPraktikumData();
+        } else {
+            showNotification('Tidak ada opsi praktikum untuk testing', 'warning');
         }
-    });
-    <?php endif; ?>
+    }
+
+    // Initial debug info
+    console.log('🚀 JavaScript loaded successfully');
+    console.log('Praktikum options count:', praktikumSelect.options.length);
+    console.log('Current praktikum value:', praktikumSelect.value);
+});
+
+// Global functions
+function confirmDelete(nama) {
+    return confirm(`Apakah Anda yakin ingin menghapus asisten:\n${nama}?`);
+}
+
+function exportToExcel() {
+    alert('Fitur export Excel akan segera hadir!');
+}
 </script>

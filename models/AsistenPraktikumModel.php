@@ -129,21 +129,27 @@ class AsistenPraktikumModel
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    // Get all praktikum for dropdown - PERBAIKI QUERY
+public function getAllPraktikum()
+{
+    $query = "
+    SELECT 
+        id AS praktikum_id,
+        nama_praktikum,
+        kelas,
+        tahun_ajaran
+    FROM praktikum
+    WHERE status = 'aktif'
+    ORDER BY nama_praktikum ASC, kelas ASC
+";
 
-    // Get all praktikum for dropdown
-    public function getAllPraktikum()
-    {
-        $query = "SELECT p.id, p.nama_praktikum, p.tahun_ajaran, m.kode_mk, m.nama_mk 
-              FROM praktikum p
-              JOIN mata_kuliah m ON p.mata_kuliah_id = m.id
-              ORDER BY m.kode_mk ASC";
-        $stmt = $this->conn->prepare($query);
-        $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
+    $stmt = $this->conn->prepare($query);
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
 
 
-    // ✅ PENTING: konsisten pakai $this->conn
+    // Get asisten by NIM
     public function getAsistenByNim($nim)
     {
         $stmt = $this->conn->prepare("
@@ -155,4 +161,32 @@ class AsistenPraktikumModel
         $stmt->execute([$nim]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
+
+    // NEW: Get available kelas for praktikum
+    public function getAvailableKelas($praktikum_id)
+    {
+        // Cek kelas yang sudah digunakan di praktikum ini
+        $query = "SELECT DISTINCT kelas FROM " . $this->table_name . " 
+                  WHERE praktikum_id = :praktikum_id 
+                  ORDER BY kelas";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':praktikum_id', $praktikum_id);
+        $stmt->execute();
+        
+        $usedKelas = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        
+        // Default kelas options
+        $allKelas = ['A', 'B', 'C', 'D', 'E', 'F'];
+        
+        // Jika ada kelas yang digunakan, suggest kelas berikutnya
+        if (!empty($usedKelas)) {
+            $lastKelas = end($usedKelas);
+            $nextKelasIndex = array_search($lastKelas, $allKelas) + 1;
+            return isset($allKelas[$nextKelasIndex]) ? $allKelas[$nextKelasIndex] : 'A';
+        }
+        
+        // Default ke A jika belum ada kelas
+        return 'A';
+    }
 }
+?>

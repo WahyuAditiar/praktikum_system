@@ -78,64 +78,24 @@ class PraktikumModel {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // ✅ PERBAIKI METHOD getByTahunAjaran - SESUAIKAN DENGAN STRUKTUR ANDA
-    public function getByTahunAjaran($tahunAjaran) {
-        try {
-            error_log("Getting praktikum for tahun: " . $tahunAjaran);
-            
-            // Gunakan $this->conn bukan $this->db
-            if (!$this->conn) {
-                throw new Exception("Database connection not established");
-            }
-            
-            // Coba query dari tabel praktikum sesuai struktur Anda
-            $sql = "SELECT id, nama_praktikum, semester, tahun_ajaran, status 
-                    FROM praktikum 
-                    WHERE tahun_ajaran = ? 
-                    AND status = 'aktif' 
-                    ORDER BY nama_praktikum ASC";
-                    
-            error_log("SQL Query: " . $sql);
-            
-            $stmt = $this->conn->prepare($sql);
-            $stmt->execute([$tahunAjaran]);
-            $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            
-            // Format result untuk konsisten dengan expected structure
-            $formattedResult = [];
-            foreach ($result as $row) {
-                $formattedResult[] = [
-                    'id' => $row['id'],
-                    'nama_praktikum' => $row['nama_praktikum'],
-                    'kelas' => '-', // Default value since kelas tidak ada di tabel praktikum
-                    'tahun_ajaran' => $row['tahun_ajaran'],
-                    'status' => $row['status']
-                ];
-            }
-            
-            error_log("Query result: " . count($formattedResult) . " records");
-            
-            return $formattedResult;
-            
-        } catch (PDOException $e) {
-            error_log("Error in getByTahunAjaran: " . $e->getMessage());
-            
-            // Fallback: coba dari tabel jadwal_praktikum jika ada
-            try {
-                $sql = "SELECT id, nama_praktikum, kelas, tahun_ajaran, status 
-                        FROM jadwal_praktikum 
-                        WHERE tahun_ajaran = ? 
-                        AND status = 'active' 
-                        LIMIT 10";
-                $stmt = $this->conn->prepare($sql);
-                $stmt->execute([$tahunAjaran]);
-                return $stmt->fetchAll(PDO::FETCH_ASSOC);
-            } catch (Exception $fallbackError) {
-                error_log("Fallback also failed: " . $fallbackError->getMessage());
-                return [];
-            }
-        }
-    }
+  public function getByTahunAjaran($tahun_ajaran)
+{
+    $query = "SELECT 
+                  jp.id,
+                  p.nama_praktikum,
+                  jp.kelas,
+                  p.tahun_ajaran
+              FROM jadwal_praktikum jp
+              JOIN praktikum p ON jp.praktikum_id = p.id
+              WHERE p.tahun_ajaran = :tahun_ajaran";
+    
+    $stmt = $this->conn->prepare($query);
+    $stmt->bindParam(':tahun_ajaran', $tahun_ajaran);
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+
 
     // ✅ METHOD TAMBAHAN: Cek apakah tabel jadwal_praktikum ada
     public function cekTabelJadwalPraktikum() {
@@ -171,5 +131,75 @@ class PraktikumModel {
             return [];
         }
     }
+
+    // ✅ METHOD UNTUK CEK STRUKTUR TABEL
+private function checkTableStructure() {
+    $result = [
+        'praktikum' => false,
+        'jadwal_praktikum' => false
+    ];
+    
+    try {
+        // Cek tabel praktikum
+        $sql = "SHOW TABLES LIKE 'praktikum'";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute();
+        $result['praktikum'] = $stmt->rowCount() > 0;
+        
+        // Cek tabel jadwal_praktikum
+        $sql = "SHOW TABLES LIKE 'jadwal_praktikum'";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute();
+        $result['jadwal_praktikum'] = $stmt->rowCount() > 0;
+        
+        error_log("📊 Table check - Praktikum: " . ($result['praktikum'] ? 'YES' : 'NO') . 
+                 ", Jadwal_Praktikum: " . ($result['jadwal_praktikum'] ? 'YES' : 'NO'));
+                 
+    } catch (Exception $e) {
+        error_log("❌ Error checking table structure: " . $e->getMessage());
+    }
+    
+    return $result;
+}
+
+// ✅ METHOD UNTUK TESTING KONEKSI DAN DATA
+public function testGetByTahunAjaran($tahunAjaran) {
+    error_log("🧪 TESTING getByTahunAjaran for: " . $tahunAjaran);
+    
+    // Test koneksi
+    if (!$this->conn) {
+        error_log("❌ Database connection failed");
+        return false;
+    }
+    
+    // Test query
+    try {
+        $sql = "SELECT 
+                    p.id,
+                    p.nama_praktikum,
+                    j.kelas,
+                    j.tahun_ajaran
+                FROM praktikum p
+                INNER JOIN jadwal_praktikum j ON p.id = j.praktikum_id
+                WHERE j.tahun_ajaran = ? 
+                LIMIT 5";
+                
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute([$tahunAjaran]);
+        $testResult = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        error_log("🧪 Test query result: " . count($testResult) . " records");
+        if (count($testResult) > 0) {
+            error_log("🧪 Sample data: " . json_encode($testResult[0]));
+        }
+        
+        return true;
+        
+    } catch (Exception $e) {
+        error_log("❌ Test query failed: " . $e->getMessage());
+        return false;
+    }
+}
+
 }
 ?>

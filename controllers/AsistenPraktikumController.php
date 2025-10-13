@@ -33,12 +33,12 @@ class AsistenPraktikumController
             $errors[] = "Praktikum harus dipilih";
         }
 
-        if (empty($data['nama_praktikum'])) {
-            $errors[] = "Nama Praktikum harus dipilih";
-        }
+        //if (empty($data['nama_praktikum'])) {
+            //$errors[] = "Nama Praktikum harus dipilih";
+        //}
 
         if (empty($data['kelas'])) {
-            $errors[] = "Kelas harus dipilih";
+            $errors[] = "Kelas harus diisi";
         }
 
         if (empty($data['semester'])) {
@@ -56,6 +56,14 @@ class AsistenPraktikumController
             $errors[] = "Status harus dipilih";
         }
 
+               // Cek duplikasi NIM untuk praktikum yang sama
+        if (empty($errors)) {
+            $nimExists = $this->asistenModel->nimExists($data['nim'], $data['praktikum_id']);
+            if ($nimExists) {
+                $errors[] = "NIM {$data['nim']} sudah terdaftar untuk praktikum ini";
+            }
+        }
+
         if (count($errors) > 0) {
             return ['success' => false, 'errors' => $errors];
         }
@@ -68,7 +76,7 @@ class AsistenPraktikumController
             $data['nama_praktikum'],
             $data['kelas'],
             $data['semester'],
-            $data['tahun_ajaran'], // TAMBAH PARAMETER INI
+            $data['tahun_ajaran'],
             $data['status']
         )) {
             return ['success' => true, 'message' => 'Data asisten praktikum berhasil ditambahkan'];
@@ -97,12 +105,12 @@ class AsistenPraktikumController
             $errors[] = "Praktikum harus dipilih";
         }
 
-        if (empty($data['nama_praktikum'])) {
-            $errors[] = "Nama Praktikum harus dipilih";
-        }
+        //if (empty($data['nama_praktikum'])) {
+            //$errors[] = "Nama Praktikum harus dipilih";
+        //}
 
         if (empty($data['kelas'])) {
-            $errors[] = "Kelas harus dipilih";
+            $errors[] = "Kelas harus diisi";
         }
 
         if (empty($data['semester'])) {
@@ -120,6 +128,14 @@ class AsistenPraktikumController
             $errors[] = "Status harus dipilih";
         }
 
+        // Cek duplikasi NIM untuk praktikum yang sama (exclude current id)
+        if (empty($errors)) {
+            $nimExists = $this->asistenModel->nimExists($data['nim'], $data['praktikum_id'], $id);
+            if ($nimExists) {
+                $errors[] = "NIM {$data['nim']} sudah terdaftar untuk praktikum ini";
+            }
+        }
+
         if (count($errors) > 0) {
             return ['success' => false, 'errors' => $errors];
         }
@@ -133,7 +149,7 @@ class AsistenPraktikumController
             $data['nama_praktikum'],
             $data['kelas'],
             $data['semester'],
-            $data['tahun_ajaran'], // TAMBAH PARAMETER INI
+            $data['tahun_ajaran'],
             $data['status']
         )) {
             return ['success' => true, 'message' => 'Data asisten praktikum berhasil diperbarui'];
@@ -175,4 +191,11 @@ class AsistenPraktikumController
     {
         return $this->asistenModel->getAllPraktikum();
     }
+
+    // NEW: Get available kelas for praktikum
+    public function getAvailableKelas($praktikum_id)
+    {
+        return $this->asistenModel->getAvailableKelas($praktikum_id);
+    }
 }
+?>
