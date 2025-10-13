@@ -1,0 +1,8 @@
+<br />
+<b>Fatal error</b>:  Uncaught Error: Class &quot;ZipStream\ZipStream&quot; not found in C:\xampp\htdocs\praktikum_system\libraries\PhpSpreadsheet\src\PhpSpreadsheet\Writer\ZipStream3.php:14
+Stack trace:
+#0 C:\xampp\htdocs\praktikum_system\libraries\PhpSpreadsheet\src\PhpSpreadsheet\Writer\ZipStream0.php(15): PhpOffice\PhpSpreadsheet\Writer\ZipStream3::newZipStream(Resource id #81)
+#1 C:\xampp\htdocs\praktikum_system\libraries\PhpSpreadsheet\src\PhpSpreadsheet\Writer\Xlsx.php(566): PhpOffice\PhpSpreadsheet\Writer\ZipStream0::newZipStream(Resource id #81)
+#2 C:\xampp\htdocs\praktikum_system\views\staff_prodi\template_jadwal.php(34): PhpOffice\PhpSpreadsheet\Writer\Xlsx-&gt;save('php://output')
+#3 {main}
+  thrown in <b>C:\xampp\htdocs\praktikum_system\libraries\PhpSpreadsheet\src\PhpSpreadsheet\Writer\ZipStream3.php</b> on line <b>14</b><br />

@@ -1,0 +1,209 @@
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 220px;   /* sesuaikan dengan sidebar kamu */
+    height: 100%;
+    background: #343a40;
+    z-index: 100;
+}
+
+.content-wrapper {
+    margin-left: 220px; /* sama dengan lebar sidebar */
+    padding: 20px;
+}
+
+/* Wrapper table */
+#jadwalTable_wrapper {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    padding: 20px;
+}
+
+/* Table header */
+#jadwalTable thead th {
+    background: #0d6efd;   /* biru bootstrap */
+    color: white;
+    text-align: center;
+    vertical-align: middle;
+    font-weight: 600;
+}
+
+/* Table rows */
+#jadwalTable tbody tr:nth-child(even) {
+    background-color: #f8f9fa;
+}
+
+#jadwalTable tbody tr:hover {
+    background-color: #e9f3ff;
+    transition: 0.2s;
+}
+
+/* Center alignment utk kolom tertentu */
+#jadwalTable td:nth-child(1),
+#jadwalTable td:nth-child(2),
+#jadwalTable td:nth-child(6),
+#jadwalTable td:nth-child(7),
+#jadwalTable td:nth-child(8) {
+    text-align: center;
+    vertical-align: middle;
+}
+
+/* Status badge */
+.badge-status {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.badge-selesai { background: #d1e7dd; color: #0f5132; }
+.badge-proses  { background: #fff3cd; color: #664d03; }
+.badge-belum   { background: #f8d7da; color: #842029; }
+
+/* ===== Styling untuk menu sidebar agar teks tidak ketutupan ikon ===== */
+.sidebar {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding-top: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding-top: 20px;
+}
+
+.sidebar .menu-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 20px;
+    color: #fff;
+    font-size: 1rem;
+    width: 100%;
+    cursor: pointer;
+    transition: background 0.2s;
+    border-radius: 6px;
+    margin-bottom: 4px;
+}
+
+.sidebar .menu-item:hover {
+ background: #495057;
+}
+
+.sidebar .menu-item i {
+    margin-right: 12px;
+    font-size: 1.2em;
+}
+
+.sidebar .menu-text {
+    display: inline-block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 160px;
+}
+
+/* Tombol aksi */
+/* Tombol aksi modern */
+/* Tombol aksi bulat kecil */
+.btn-action {
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 2px;
+    transition: 0.2s;
+}
+
+.btn-action i {
+    font-size: 14px;
+}
+
+
+
+
+
+
+
+.btn-action:hover {
+    transform: scale(1.1);
+    opacity: 0.9;
+}
+
+/* Tombol aksi lebih kecil */
+td .btn-sm {
+    padding: 2px 4px !important;
+    font-size: 12px !important;
+    line-height: 1 !important;
+    border-radius: 4px !important;
+    width: 28px !important;
+    height: 28px !important;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Kolom status dan aksi rata tengah */
+td:nth-child(7), td:nth-child(8) {
+    text-align: center;
+    vertical-align: middle;
+}
+
+/* Tombol status lebih kecil */
+td .btn-status {
+    padding: 2px 6px !important;
+    font-size: 11px !important;
+    border-radius: 4px !important;
+}
+
+
+
+
+/* Kolom status dan aksi rata tengah */
+td:nth-child(7), td:nth-child(8) {
+    text-align: center;
+    vertical-align: middle;
+}
+
+/* Status badge */
+.badge-status {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+.badge-selesai { background: #d1e7dd; color: #0f5132; }
+.badge-proses  { background: #fff3cd; color: #664d03; }
+.badge-belum   { background: #f8d7da; color: #842029; }
+
+/* Perbaikan agar dropdown sidebar tetap bisa diakses saat minimize */
+.sidebar.minimized .nav-link > p,
+.sidebar.minimized .menu-text {
+    opacity: 0;
+    width: 0;
+    overflow: hidden;
+    transition: opacity 0.2s, width 0.2s;
+}
+.sidebar .nav-link > p,
+.sidebar .menu-text {
+    transition: opacity 0.2s, width 0.2s;
+}
+/* Pastikan submenu tetap tampil saat active/open meski minimize */
+.sidebar .nav-treeview {
+    padding-left: 20px;
+}
+.sidebar .has-treeview.menu-open > .nav-treeview {
+    display: block !important;
+}
+.sidebar .has-treeview > .nav-treeview {
+    display: none;
+}
+.sidebar .has-treeview.menu-open > .nav-link {
+    background: #23272b;
+}
+
+
+
