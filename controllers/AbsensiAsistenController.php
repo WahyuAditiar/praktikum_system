@@ -25,7 +25,8 @@ class AbsensiAsistenController {
         return $this->model->getById($id);
     }
 
- public function create($data, $files, $username) {
+ // Di file controllers/AbsensiAsistenController.php - update method create
+public function create($data, $files, $username) {
     try {
         // ✅ PERBAIKAN: Auto-fill NIM jika kosong
         if (empty($data['nim']) && !empty($_SESSION['nim'])) {
@@ -76,10 +77,10 @@ class AbsensiAsistenController {
             $laporan_path = $this->handleFileUpload($files['laporan'], 'laporan', $data['nim'], $data['pertemuan']);
         }
 
-        // ✅ PERBAIKAN: Query INSERT dengan signature_data (bukan signature_data)
+        // ✅ UPDATE: Query INSERT dengan materi
         $columns = [
             'nim', 'nama', 'praktikum_name', 'kelas', 'pertemuan', 
-            'tanggal', 'jam_mulai', 'status_hadir', 'signature_data', // ✅ GUNAKAN signature_data
+            'tanggal', 'jam_mulai', 'materi', 'status_hadir', 'signature_data',
             'foto_path', 'laporan_path', 'gps_lat', 'gps_lng', 'created_by', 'created_at'
         ];
         
@@ -92,8 +93,9 @@ class AbsensiAsistenController {
             $data['pertemuan'], 
             $data['tanggal'], 
             $data['jam_mulai'],
+            $data['materi'] ?? '', // ✅ TAMBAHKAN MATERI
             $data['status_hadir'], 
-            $signature_data, // ✅ SIMPAN PATH FILE, BUKAN BASE64
+            $signature_data,
             $foto_path, 
             $laporan_path,
             $data['gps_lat'] ?? null, 
@@ -306,6 +308,7 @@ private function getSignatureFromUserProfile($nim) {
             'tanggal' => $post['tanggal'],
             'jam_mulai' => $post['jam_mulai'] ?? null,
             'jam_akhir' => $post['jam_akhir'] ?? null,
+            'materi' => $post['materi'] ?? null,
             'status_hadir' => $post['status_hadir'] ?? 'alpha',
             'signature_data' => $signature_data,
             'foto_path' => $foto_path,

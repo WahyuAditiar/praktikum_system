@@ -1,14 +1,7 @@
-<<<<<<< HEAD
-<?php 
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-} 
-=======
 <?php
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
->>>>>>> 43c0fe9 (update_backup_kesalahan commite)
 ?>
 
 <nav class="main-header navbar navbar-expand navbar-white navbar-light">
@@ -19,37 +12,6 @@ if (session_status() === PHP_SESSION_NONE) {
     </ul>
 
     <ul class="navbar-nav ml-auto">
-<<<<<<< HEAD
-      <!-- Di templates/header.php -->
-<li class="nav-item dropdown">
-    <a class="nav-link" data-toggle="dropdown" href="#">
-        <i class="far fa-user"></i> 
-        <?= htmlspecialchars($_SESSION['username'] ?? 'User') ?>
-    </a>
-    <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
-        <span class="dropdown-header">
-            <i class="fas fa-user mr-2"></i>
-            <?= htmlspecialchars($_SESSION['nama'] ?? 'User') ?>
-        </span>
-        <div class="dropdown-divider"></div>
-        
-        <!-- Link ke Profile -->
-        <a href="../asisten_praktikumMenu/profile.php" class="dropdown-item">
-            <i class="fas fa-user mr-2"></i> My Profile
-        </a>
-        
-        <!-- Link ke Profile Settings (untuk atur signature) -->
-        <a href="../asisten_praktikumMenu/profile_settings.php" class="dropdown-item">
-            <i class="fas fa-signature mr-2"></i> Signature Settings
-        </a>
-        
-        <div class="dropdown-divider"></div>
-        <a href="../auth/logout.php" class="dropdown-item">
-            <i class="fas fa-sign-out-alt mr-2"></i> Logout
-        </a>
-    </div>
-</li>
-=======
         <li class="nav-item dropdown">
             <a class="nav-link" data-toggle="dropdown" href="#">
                 <i class="far fa-user"></i>
@@ -76,7 +38,6 @@ if (session_status() === PHP_SESSION_NONE) {
                 </a>
             </div>
         </li>
->>>>>>> 43c0fe9 (update_backup_kesalahan commite)
     </ul>
 </nav>
 
@@ -92,67 +53,6 @@ if (session_status() === PHP_SESSION_NONE) {
 
                 <!-- MENU LAB (Admin & Staff Lab) -->
                 <?php if ($_SESSION['role'] == 'admin' || $_SESSION['role'] == 'staff_lab'): ?>
-<<<<<<< HEAD
-                <li class="nav-item">
-                    <a href="../staff_lab/dashboard.php" class="nav-link">
-                        <i class="nav-icon fas fa-tachometer-alt"></i>
-                        <p>Dashboard Lab</p>
-                    </a>
-                </li>
-                <li class="nav-item has-treeview">
-                    <a href="#" class="nav-link">
-                        <i class="nav-icon fas fa-flask"></i>
-                        <p>
-                            Menu Lab
-                            <i class="right fas fa-angle-left"></i>
-                        </p>
-                    </a>
-                    <ul class="nav nav-treeview">
-                        <li class="nav-item">
-                            <a href="../staff_lab/absen_praktikan_admin.php" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Absen Praktikan</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="../staff_lab/dosen.php" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Manajemen Dosen</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="../staff_lab/praktikum.php" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Manajemen Praktikum</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="../staff_lab/asisten_praktikum.php" class="nav-link">
-                                <i class="nav-icon fas fa-users"></i>
-                                <p>Asisten Praktikum</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="../staff_lab/JadwalPraktikum.php" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Jadwal Praktikum</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="../staff_lab/mahasiswa.php" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Data Mahasiswa Praktikum</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="../staff_lab/absen_asistenpraktikum.php" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Absensi Asisten Praktikum</p>
-                            </a>
-                        </li>
-                    </ul>
-                </li>
-=======
                     <li class="nav-item">
                         <a href="../staff_lab/dashboard.php" class="nav-link">
                             <i class="nav-icon fas fa-tachometer-alt"></i>
@@ -221,76 +121,10 @@ if (session_status() === PHP_SESSION_NONE) {
 
                         </ul>
                     </li>
->>>>>>> 43c0fe9 (update_backup_kesalahan commite)
                 <?php endif; ?>
 
                 <!-- MENU PRODI (Admin & Staff Prodi) -->
                 <?php if ($_SESSION['role'] == 'admin' || $_SESSION['role'] == 'staff_prodi'): ?>
-<<<<<<< HEAD
-             
-                <li class="nav-item has-treeview">
-                    <a href="#" class="nav-link">
-                        <i class="nav-icon fas fa-university"></i>
-                        <p>Menu Prodi<i class="right fas fa-angle-left"></i></p>
-                    </a>
-                    <ul class="nav nav-treeview">
-                                 <li class="nav-item">
-                    <a href="../staff_prodi/dashboard.php" class="nav-link">
-                        <i class="nav-icon fas fa-tachometer-alt"></i>
-                        <p>Dashboard Prodi</p>
-                    </a>
-                </li>
-                        <li class="nav-item">
-                            <a href="../staff_prodi/dosen.php" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Manajemen Dosen</p>
-                            </a>
-                        </li>
-                  
-                        <li class="nav-item">
-                            <a href="../staff_prodi/ruangan.php" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Manajemen Ruangan</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="../staff_prodi/matakuliah.php" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Manajemen Mata Kuliah</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="../staff_prodi/jadwal.php" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Manajemen Jadwal</p>
-                            </a>
-                        </li>
-                    </ul>
-                </li>
-                <?php endif; ?>
-
-                <!-- MENU ASISTEN PRAKTIKUM -->
-
-                <?php if ($_SESSION['role'] == 'admin' || $_SESSION['role'] == 'asisten_praktikum'): ?>
-                <li class="nav-item">
-                    <a href="../asisten_praktikumMenu/dashboard.php" class="nav-link">
-                        <i class="nav-icon fas fa-tachometer-alt"></i>
-                        <p>Dashboard Asisten</p>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="../asisten_praktikumMenu/absen_praktikan.php" class="nav-link">
-                        <i class="nav-icon fas fa-check-square"></i>
-                        <p>Absen Praktikan</p>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="../staff_lab/absen_asistenpraktikum.php" class="nav-link">
-                        <i class="nav-icon fas fa-check-square"></i>
-                        <p>Absensi Asisten Praktikan</p>
-                    </a>
-                </li>
-=======
                     <li class="nav-item has-treeview">
                         <a href="#" class="nav-link">
                             <i class="nav-icon fas fa-university"></i>
@@ -371,13 +205,8 @@ if (session_status() === PHP_SESSION_NONE) {
                             <p>Absensi Asisten</p>
                         </a>
                     </li>
->>>>>>> 43c0fe9 (update_backup_kesalahan commite)
                 <?php endif; ?>
             </ul>
         </nav>
     </div>
-<<<<<<< HEAD
 </aside>
-=======
-</aside>
->>>>>>> 43c0fe9 (update_backup_kesalahan commite)

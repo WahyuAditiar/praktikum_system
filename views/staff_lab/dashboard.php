@@ -3,11 +3,8 @@ require_once __DIR__ . '/../../config/config.php';
 checkAuth();
 checkRole(['staff_lab', 'admin']);
 
-<<<<<<< HEAD
-=======
 
 
->>>>>>> 43c0fe9 (update_backup_kesalahan commite)
 $page_title = "Dashboard Staff Laboratorium";
 ?>
 
@@ -21,25 +18,19 @@ $page_title = "Dashboard Staff Laboratorium";
                 <div class="col-sm-6">
                     <h1 class="m-0">Dashboard Staff Laboratorium</h1>
                 </div>
-<<<<<<< HEAD
-=======
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="dashboard.php">Home</a></li>
                         <li class="breadcrumb-item active">Dashboard</li>
                     </ol>
                 </div>
->>>>>>> 43c0fe9 (update_backup_kesalahan commite)
             </div>
         </div>
     </div>
 
     <section class="content">
         <div class="container-fluid">
-<<<<<<< HEAD
-=======
             <!-- STATISTICS CARDS -->
->>>>>>> 43c0fe9 (update_backup_kesalahan commite)
             <div class="row">
                 <div class="col-lg-3 col-6">
                     <div class="small-box bg-info">
@@ -89,9 +80,6 @@ $page_title = "Dashboard Staff Laboratorium";
                         <div class="icon">
                             <i class="fas fa-calendar"></i>
                         </div>
-<<<<<<< HEAD
-                        <a href="jadwal.php" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
-=======
                         <a href="JadwalPraktikum.php" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
                     </div>
                 </div>
@@ -298,7 +286,6 @@ $page_title = "Dashboard Staff Laboratorium";
                                 </div>
                             </div>
                         </div>
->>>>>>> 43c0fe9 (update_backup_kesalahan commite)
                     </div>
                 </div>
             </div>

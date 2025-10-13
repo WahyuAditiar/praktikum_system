@@ -12,10 +12,10 @@ class AbsensiAsistenModel {
 
    public function createRecord($data) {
         $sql = "INSERT INTO {$this->table} 
-            (nim, nama, praktikum_id, praktikum_name, kelas, pertemuan, tanggal, jam_mulai, jam_akhir, 
+            (nim, nama, praktikum_id, praktikum_name, kelas, pertemuan, tanggal, jam_mulai, jam_akhir, materi,
             status_hadir, signature_path, foto_path, laporan_path, gps_lat, gps_lng, created_by) 
             VALUES 
-            (:nim, :nama, :praktikum_id, :praktikum_name, :kelas, :pertemuan, :tanggal, :jam_mulai, :jam_akhir, 
+            (:nim, :nama, :praktikum_id, :praktikum_name, :kelas, :pertemuan, :tanggal, :jam_mulai, :jam_akhir, :materi, 
             :status_hadir, :signature_path, :foto_path, :laporan_path, :gps_lat, :gps_lng, :created_by)";
         
         $stmt = $this->db->prepare($sql);
@@ -170,6 +170,7 @@ public function getRiwayatTahunAjaranByNim($nim) {
     $stmt->execute();
     return $stmt->fetchAll(PDO::FETCH_COLUMN);
 }
+
 
 
 }

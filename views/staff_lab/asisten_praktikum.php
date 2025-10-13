@@ -2,18 +2,65 @@
 require_once __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/../../models/AsistenPraktikumModel.php';
 require_once __DIR__ . '/../../controllers/AsistenPraktikumController.php';
+require_once __DIR__ . '/../../models/PraktikumModel.php';
 
 checkAuth();
 checkRole(['staff_lab', 'admin']);
 
-
 $database = new Database();
 $db = $database->getConnection();
 $asistenController = new AsistenPraktikumController($db);
+$praktikumModel = new PraktikumModel($db);
 
 $page_title = "Manajemen Asisten Praktikum";
 $error = '';
 $success = '';
+
+// DEBUG: Cek struktur tabel jadwal_praktikum
+try {
+    $debugSql = "DESCRIBE jadwal_praktikum";
+    $debugStmt = $db->query($debugSql);
+    $tableStructure = $debugStmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Cari kolom nama praktikum
+    $namaPraktikumColumn = '';
+    foreach ($tableStructure as $column) {
+        $field = $column['Field'];
+        if (stripos($field, 'nama') !== false && 
+            (stripos($field, 'mk') !== false || stripos($field, 'matkul') !== false || stripos($field, 'praktikum') !== false)) {
+            $namaPraktikumColumn = $field;
+            break;
+        }
+    }
+    
+    // Jika tidak ditemukan, coba kolom lain
+    if (!$namaPraktikumColumn) {
+        foreach ($tableStructure as $column) {
+            $field = $column['Field'];
+            if (stripos($field, 'nama') !== false) {
+                $namaPraktikumColumn = $field;
+                break;
+            }
+        }
+    }
+    
+    // Query data praktikum
+    if ($namaPraktikumColumn) {
+        $debugSql = "SELECT id, $namaPraktikumColumn as nama_praktikum, kelas, tahun_ajaran, status 
+                     FROM jadwal_praktikum 
+                     ORDER BY tahun_ajaran DESC, $namaPraktikumColumn";
+    } else {
+        // Fallback - tampilkan semua kolom
+        $debugSql = "SELECT * FROM jadwal_praktikum ORDER BY tahun_ajaran DESC LIMIT 10";
+    }
+    
+    $debugStmt = $db->query($debugSql);
+    $allPraktikum = $debugStmt->fetchAll(PDO::FETCH_ASSOC);
+    
+} catch (PDOException $e) {
+    error_log("Debug error: " . $e->getMessage());
+    $allPraktikum = [];
+}
 
 // Handle form actions
 if ($_POST) {
@@ -21,16 +68,44 @@ if ($_POST) {
         $result = $asistenController->createAsisten($_POST);
         if ($result['success']) {
             $success = $result['message'];
+            echo '<script>window.location.href = "asisten_praktikum.php?status=success&message=' . urlencode($result['message']) . '";</script>';
+            exit;
         } else {
-            $error = implode('<br>', $result['errors']);
+            $error = is_array($result['errors']) ? implode('<br>', $result['errors']) : $result['message'];
         }
     } elseif (isset($_POST['edit_asisten'])) {
         $id = $_POST['id'];
         $result = $asistenController->updateAsisten($id, $_POST);
         if ($result['success']) {
             $success = $result['message'];
+            echo '<script>window.location.href = "asisten_praktikum.php?status=success&message=' . urlencode($result['message']) . '";</script>';
+            exit;
         } else {
-            $error = implode('<br>', $result['errors']);
+            $error = is_array($result['errors']) ? implode('<br>', $result['errors']) : $result['message'];
+        }
+    }
+}
+
+// Handle form actions
+if ($_POST) {
+    if (isset($_POST['tambah_asisten'])) {
+        $result = $asistenController->createAsisten($_POST);
+        if ($result['success']) {
+            $success = $result['message'];
+            echo '<script>window.location.href = "asisten_praktikum.php?status=success&message=' . urlencode($result['message']) . '";</script>';
+            exit;
+        } else {
+            $error = is_array($result['errors']) ? implode('<br>', $result['errors']) : $result['message'];
+        }
+    } elseif (isset($_POST['edit_asisten'])) {
+        $id = $_POST['id'];
+        $result = $asistenController->updateAsisten($id, $_POST);
+        if ($result['success']) {
+            $success = $result['message'];
+            echo '<script>window.location.href = "asisten_praktikum.php?status=success&message=' . urlencode($result['message']) . '";</script>';
+            exit;
+        } else {
+            $error = is_array($result['errors']) ? implode('<br>', $result['errors']) : $result['message'];
         }
     }
 }
@@ -41,8 +116,19 @@ if (isset($_GET['hapus'])) {
     $result = $asistenController->deleteAsisten($id);
     if ($result['success']) {
         $success = $result['message'];
+        echo '<script>window.location.href = "asisten_praktikum.php?status=success&message=' . urlencode($result['message']) . '";</script>';
+        exit;
     } else {
-        $error = implode('<br>', $result['errors']);
+        $error = is_array($result['errors']) ? implode('<br>', $result['errors']) : $result['message'];
+    }
+}
+
+// Handle status from redirect
+if (isset($_GET['status'])) {
+    if ($_GET['status'] === 'success') {
+        $success = $_GET['message'] ?? 'Operasi berhasil';
+    } elseif ($_GET['status'] === 'error') {
+        $error = $_GET['message'] ?? 'Terjadi kesalahan';
     }
 }
 
@@ -56,7 +142,7 @@ if (isset($_GET['edit'])) {
     $editData = $asistenController->getAsistenById($_GET['edit']);
 }
 
-// Get praktikum list for dropdown
+// Get praktikum list for dropdown (all tahun ajaran)
 $praktikumList = $asistenController->getAllPraktikum();
 ?>
 
@@ -82,6 +168,14 @@ $praktikumList = $asistenController->getAllPraktikum();
 
     <section class="content">
         <div class="container-fluid">
+            <!-- DEBUG INFO -->
+            <div class="alert alert-info d-none">
+                <strong>DEBUG - Data jadwal_praktikum yang tersedia:</strong>
+                <?php foreach ($allPraktikum as $p): ?>
+                    <br>ID: <?= $p['id'] ?> - <?= $p['nama_praktikum'] ?> - Kelas <?= $p['kelas'] ?> - <?= $p['tahun_ajaran'] ?> - Status: <?= $p['status'] ?>
+                <?php endforeach; ?>
+            </div>
+
             <!-- Notifications -->
             <?php if ($error): ?>
                 <div class="alert alert-danger alert-dismissible">
@@ -185,31 +279,28 @@ $praktikumList = $asistenController->getAllPraktikum();
                                         placeholder="Nama lengkap asisten" required>
                                 </div>
 
+                                <!-- TAHUN AJARAN MANUAL INPUT -->
+                                <div class="form-group">
+                                    <label for="tahun_ajaran_input">Tahun Ajaran <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="tahun_ajaran_input" name="tahun_ajaran"
+                                        value="<?php echo $editData ? htmlspecialchars($editData['tahun_ajaran']) : ''; ?>"
+                                        placeholder="Contoh: 2023/2024" required>
+                                    <small class="form-text text-muted">Format: Tahun/Tahun (contoh: 2023/2024)</small>
+                                </div>
+
+                                <!-- PRAKTIKUM (akan di-load berdasarkan tahun ajaran) -->
                                 <div class="form-group">
                                     <label for="praktikum_id">Praktikum <span class="text-danger">*</span></label>
-                                    <select class="form-control" id="praktikum_id" name="praktikum_id" required>
-                                        <option value="">Pilih Praktikum</option>
-                                        <?php foreach ($praktikumList as $praktikum): ?>
-                                            <option value="<?php echo $praktikum['id']; ?>"
-                                                data-nama="<?php echo htmlspecialchars($praktikum['nama_praktikum']); ?>"
-                                                data-tahun="<?php echo htmlspecialchars($praktikum['tahun_ajaran']); ?>"
-                                                data-mk="<?php echo htmlspecialchars($praktikum['nama_mk']); ?>">
-                                                <?php echo htmlspecialchars($praktikum['kode_mk'] . ' - ' . $praktikum['nama_mk'] . ' (' . $praktikum['tahun_ajaran'] . ')'); ?>
-                                            </option>
-                                        <?php endforeach; ?>
+                                    <select class="form-control select2" id="praktikum_id" name="praktikum_id" required style="width: 100%;" disabled>
+                                        <option value="">-- Ketik tahun ajaran dulu --</option>
                                     </select>
+                                    <input type="hidden" id="nama_praktikum" name="nama_praktikum">
                                 </div>
-
-                                <div class="form-group">
-                                    <label for="nama_praktikum">Nama Praktikum</label>
-                                    <input type="text" class="form-control" id="nama_praktikum" name="nama_praktikum" readonly>
-                                </div>
-
 
                                 <div class="form-group">
                                     <label for="kelas">Kelas <span class="text-danger">*</span></label>
                                     <select class="form-control" id="kelas" name="kelas" required>
-                                        <option value="">Kelas</option>
+                                        <option value="">Pilih Kelas</option>
                                         <option value="A" <?php echo ($editData && $editData['kelas'] == 'A') ? 'selected' : ''; ?>>A</option>
                                         <option value="B" <?php echo ($editData && $editData['kelas'] == 'B') ? 'selected' : ''; ?>>B</option>
                                         <option value="C" <?php echo ($editData && $editData['kelas'] == 'C') ? 'selected' : ''; ?>>C</option>
@@ -221,7 +312,6 @@ $praktikumList = $asistenController->getAllPraktikum();
                                     </select>
                                 </div>
 
-
                                 <div class="form-group">
                                     <label for="semester">Semester <span class="text-danger">*</span></label>
                                     <select class="form-control" id="semester" name="semester" required>
@@ -230,15 +320,6 @@ $praktikumList = $asistenController->getAllPraktikum();
                                         <option value="Genap" <?php echo ($editData && $editData['semester'] == 'Genap') ? 'selected' : ''; ?>>Genap</option>
                                         <option value="Pendek" <?php echo ($editData && $editData['semester'] == 'Pendek') ? 'selected' : ''; ?>>Pendek</option>
                                     </select>
-                                </div>
-
-                                <!-- TAMBAH FIELD TAHUN AJARAN (MANUAL INPUT) -->
-                                <div class="form-group">
-                                    <label for="tahun_ajaran">Tahun Ajaran <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="tahun_ajaran" name="tahun_ajaran"
-                                        value="<?php echo $editData ? htmlspecialchars($editData['tahun_ajaran']) : ''; ?>"
-                                        placeholder="Contoh: 2023/2024" required>
-                                    <small class="form-text text-muted">Format: Tahun/Tahun (contoh: 2023/2024)</small>
                                 </div>
 
                                 <div class="form-group">
@@ -297,7 +378,7 @@ $praktikumList = $asistenController->getAllPraktikum();
                                         <th>Praktikum</th>
                                         <th>Kelas</th>
                                         <th>Semester</th>
-                                        <th>Tahun Ajaran</th> <!-- KOLOM BARU -->
+                                        <th>Tahun Ajaran</th>
                                         <th>Status</th>
                                         <th width="120">Aksi</th>
                                     </tr>
@@ -305,7 +386,7 @@ $praktikumList = $asistenController->getAllPraktikum();
                                 <tbody>
                                     <?php if (empty($asistenData)): ?>
                                         <tr>
-                                            <td colspan="8" class="text-center text-muted">Belum ada data asisten praktikum</td>
+                                            <td colspan="10" class="text-center text-muted">Belum ada data asisten praktikum</td>
                                         </tr>
                                     <?php else: ?>
                                         <?php foreach ($asistenData as $index => $asisten): ?>
@@ -313,11 +394,11 @@ $praktikumList = $asistenController->getAllPraktikum();
                                                 <td><?php echo $index + 1; ?></td>
                                                 <td><strong><?php echo htmlspecialchars($asisten['nim']); ?></strong></td>
                                                 <td><strong><?php echo htmlspecialchars($asisten['nama']); ?></strong></td>
-                                                <td> <strong><?php echo htmlspecialchars($asisten['kode_mk']); ?></strong></td>
+                                                <td><strong><?php echo htmlspecialchars($asisten['kode_mk']); ?></strong></td>
                                                 <td><strong><?php echo htmlspecialchars($asisten['nama_praktikum']); ?></strong></td>
                                                 <td><strong><?php echo htmlspecialchars($asisten['kelas']); ?></strong></td>
                                                 <td><?php echo htmlspecialchars($asisten['semester']); ?></td>
-                                                <td><strong><?php echo htmlspecialchars($asisten['tahun_ajaran']); ?></strong></td> <!-- DATA BARU -->
+                                                <td><strong><?php echo htmlspecialchars($asisten['tahun_ajaran']); ?></strong></td>
                                                 <td>
                                                     <?php if ($asisten['status'] == 'active'): ?>
                                                         <span class="badge badge-success">Aktif</span>
@@ -359,7 +440,98 @@ $praktikumList = $asistenController->getAllPraktikum();
 
 <?php include __DIR__ . '/../templates/footer.php'; ?>
 
+<!-- Include Select2 -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<style>
+    .select2-container--default .select2-selection--single {
+        border: 1px solid #ced4da !important;
+        border-radius: 0.375rem !important;
+        height: calc(2.25rem + 2px) !important;
+    }
+    
+    .select2-container--default .select2-selection--single:focus {
+        border-color: #80bdff !important;
+        outline: 0 !important;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25) !important;
+    }
+</style>
+
 <script>
+    // Initialize Select2
+    $(document).ready(function() {
+        $('.select2').select2({
+            theme: 'bootstrap4',
+            width: '100%'
+        });
+    });
+
+    // Load praktikum berdasarkan tahun ajaran (manual input)
+// Simple fallback dalam JavaScript
+document.getElementById('tahun_ajaran_input').addEventListener('input', function() {
+    const tahunAjaran = this.value.trim();
+    const praktikumSelect = document.getElementById('praktikum_id');
+    
+    if (tahunAjaran.length >= 9 && tahunAjaran.includes('/')) {
+        praktikumSelect.disabled = false;
+        
+        // Static data for testing
+        const staticData = [
+            {id: 1, nama_praktikum: 'Prak. Algoritma & Struktur Data', kelas: 'A'},
+            {id: 2, nama_praktikum: 'Prak. Basis Data', kelas: 'B'},
+            {id: 3, nama_praktikum: 'Prak. Pemrograman Web', kelas: 'C'}
+        ];
+        
+        praktikumSelect.innerHTML = '<option value="">-- Pilih Praktikum --</option>';
+        staticData.forEach(praktikum => {
+            const option = new Option(
+                `${praktikum.nama_praktikum} (Kelas ${praktikum.kelas})`,
+                praktikum.id
+            );
+            option.setAttribute('data-nama-praktikum', praktikum.nama_praktikum);
+            praktikumSelect.add(option);
+        });
+        
+        $(praktikumSelect).trigger('change.select2');
+        showNotification('Data praktikum loaded (static)', 'info');
+    } else {
+        praktikumSelect.disabled = true;
+        praktikumSelect.innerHTML = '<option value="">-- Ketik tahun ajaran dulu --</option>';
+        $(praktikumSelect).trigger('change.select2');
+    }
+});
+
+    // Auto-format tahun ajaran dan set nama praktikum
+    document.getElementById('tahun_ajaran_input').addEventListener('blur', function() {
+        let value = this.value.trim();
+        
+        // Auto-format: 20232024 -> 2023/2024
+        if (value.length === 8 && !value.includes('/')) {
+            value = value.substring(0, 4) + '/' + value.substring(4);
+            this.value = value;
+        }
+        
+        // Validasi format
+        const tahunRegex = /^\d{4}\/\d{4}$/;
+        if (!tahunRegex.test(value)) {
+            this.classList.add('is-invalid');
+            showNotification('Format tahun ajaran harus: Tahun/Tahun (contoh: 2023/2024)', 'warning');
+        } else {
+            this.classList.remove('is-invalid');
+            this.classList.add('is-valid');
+            // Trigger load praktikum
+            this.dispatchEvent(new Event('input'));
+        }
+    });
+
+    // Set nama praktikum ketika praktikum dipilih
+    document.getElementById('praktikum_id').addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        const namaPraktikum = selectedOption.getAttribute('data-nama-praktikum') || '';
+        document.getElementById('nama_praktikum').value = namaPraktikum;
+    });
+
     // Search functionality
     document.getElementById('searchInput').addEventListener('keyup', function() {
         const searchText = this.value.toLowerCase();
@@ -374,6 +546,8 @@ $praktikumList = $asistenController->getAllPraktikum();
     // Form validation
     document.getElementById('asistenForm').addEventListener('submit', function(e) {
         const nim = document.getElementById('nim').value;
+        const tahunAjaran = document.getElementById('tahun_ajaran_input').value;
+        const praktikumId = document.getElementById('praktikum_id').value;
 
         // Validate NIM (only numbers)
         if (!/^\d+$/.test(nim)) {
@@ -381,6 +555,25 @@ $praktikumList = $asistenController->getAllPraktikum();
             alert('NIM harus berupa angka saja');
             return false;
         }
+
+        // Validate tahun ajaran format
+        const tahunRegex = /^\d{4}\/\d{4}$/;
+        if (!tahunRegex.test(tahunAjaran)) {
+            e.preventDefault();
+            alert('Format tahun ajaran harus: Tahun/Tahun (contoh: 2023/2024)');
+            document.getElementById('tahun_ajaran_input').focus();
+            return false;
+        }
+
+        // Validate praktikum is selected
+        if (!praktikumId) {
+            e.preventDefault();
+            alert('Silakan pilih praktikum');
+            document.getElementById('praktikum_id').focus();
+            return false;
+        }
+
+        return true;
     });
 
     function exportToExcel() {
@@ -401,32 +594,73 @@ $praktikumList = $asistenController->getAllPraktikum();
     function confirmDelete(nama) {
         return confirm('PERINGATAN: Data asisten akan dihapus secara PERMANEN dan tidak dapat dikembalikan!\n\nYakin hapus asisten ' + nama + '?');
     }
-</script>
 
-<script>
-    document.getElementById('praktikum_id').addEventListener('change', function() {
-        var selected = this.options[this.selectedIndex];
-        var namaPraktikum = selected.getAttribute('data-nama') || '';
+    function showNotification(message, type = 'info') {
+        // Remove existing notifications
+        const existingNotifications = document.querySelectorAll('.auto-notification');
+        existingNotifications.forEach(notif => notif.remove());
 
-        document.getElementById('nama_praktikum').value = namaPraktikum;
+        // Create new notification
+        const notification = document.createElement('div');
+        notification.className = `alert alert-${type} auto-notification`;
+        notification.style.cssText = `
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 9999;
+            min-width: 300px;
+            max-width: 500px;
+        `;
+        notification.innerHTML = `
+            <button type="button" class="close" onclick="this.parentElement.remove()">
+                <span>&times;</span>
+            </button>
+            <i class="fas fa-${getNotificationIcon(type)} mr-2"></i>
+            ${message}
+        `;
 
-        // Opsional: Auto-fill tahun_ajaran berdasarkan pilihan praktikum, tapi tetap bisa diedit
-        var tahunAjaran = selected.getAttribute('data-tahun') || '';
-        if (tahunAjaran && !document.getElementById('tahun_ajaran').value) {
-            document.getElementById('tahun_ajaran').value = tahunAjaran;
+        document.body.appendChild(notification);
+
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.remove();
+            }
+        }, 5000);
+    }
+
+    function getNotificationIcon(type) {
+        const icons = {
+            'success': 'check-circle',
+            'warning': 'exclamation-triangle',
+            'info': 'info-circle',
+            'danger': 'times-circle'
+        };
+        return icons[type] || 'info-circle';
+    }
+
+    // Pre-fill data for edit mode
+    <?php if ($editData): ?>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Trigger load praktikum for edit mode
+        const tahunAjaran = '<?php echo $editData['tahun_ajaran']; ?>';
+        const praktikumId = '<?php echo $editData['praktikum_id']; ?>';
+        const namaPraktikum = '<?php echo $editData['nama_praktikum']; ?>';
+        
+        if (tahunAjaran) {
+            document.getElementById('tahun_ajaran_input').value = tahunAjaran;
+            // Trigger load praktikum
+            setTimeout(() => {
+                document.getElementById('tahun_ajaran_input').dispatchEvent(new Event('input'));
+                
+                // Set praktikum after loading
+                setTimeout(() => {
+                    document.getElementById('praktikum_id').value = praktikumId;
+                    document.getElementById('nama_praktikum').value = namaPraktikum;
+                    $(document.getElementById('praktikum_id')).trigger('change.select2');
+                }, 1000);
+            }, 500);
         }
     });
-
-    // Validasi format tahun ajaran
-    document.getElementById('asistenForm').addEventListener('submit', function(e) {
-        const tahunAjaran = document.getElementById('tahun_ajaran').value;
-
-        // Validasi format tahun ajaran (opsional)
-        if (tahunAjaran && !/^\d{4}\/\d{4}$/.test(tahunAjaran)) {
-            e.preventDefault();
-            alert('Format tahun ajaran harus: Tahun/Tahun (contoh: 2023/2024)');
-            document.getElementById('tahun_ajaran').focus();
-            return false;
-        }
-    });
+    <?php endif; ?>
 </script>

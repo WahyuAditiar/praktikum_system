@@ -117,8 +117,6 @@ $page_title = "Dashboard Administrator";
                                         <i class="fas fa-clipboard-check mr-1"></i> Absensi
                                     </a>
                                 </div>
-<<<<<<< HEAD
-=======
                                 <!-- Di bagian menu admin -->
 <div class="card">
     <div class="card-header">
@@ -131,7 +129,6 @@ $page_title = "Dashboard Administrator";
         <!-- menu lainnya -->
     </div>
 </div>
->>>>>>> 43c0fe9 (update_backup_kesalahan commite)
                             </div>
                         </div>
                     </div>

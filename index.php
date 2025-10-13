@@ -7,11 +7,6 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
-<<<<<<< HEAD
-
-
-
-=======
 // Koneksi Database
 require_once 'config/database.php';
 
@@ -108,4 +103,3 @@ switch($page) {
         header("Location: ?page=dashboard");
         exit();
 }
->>>>>>> 43c0fe9 (update_backup_kesalahan commite)
