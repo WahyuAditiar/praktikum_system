@@ -236,7 +236,7 @@ if (session_status() === PHP_SESSION_NONE) {
                 </a>
                 <ul class="nav nav-treeview" style="margin-left: 15px;">
                     <li class="nav-item">
-                        <a href="absensi.php" class="nav-link">
+                        <a href="../asisten_praktikumMenu/absensi.php" class="nav-link">
                             <i class="far fa-dot-circle nav-icon"></i>
                             <p>Input Absensi</p>
                         </a>
