@@ -104,6 +104,8 @@ if (isset($_POST['register'])) {
       --primary-color: #2563eb;
       --primary-dark: #1d4ed8;
       --primary-light: #3b82f6;
+      --secondary-color: #10b981;
+      --secondary-dark: #059669;
       --text-dark: #1f2937;
       --text-light: #6b7280;
       --bg-white: rgba(255, 255, 255, 0.95);
@@ -127,6 +129,7 @@ if (isset($_POST['register'])) {
       align-items: center;
       font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
       position: relative;
+      padding: 20px;
     }
 
     body::before {
@@ -140,24 +143,46 @@ if (isset($_POST['register'])) {
       backdrop-filter: blur(2px);
     }
 
+    .main-container {
+      max-width: 1200px;
+      width: 100%;
+      display: flex;
+      gap: 2rem;
+      position: relative;
+      z-index: 1;
+      justify-content: space-between;
+    }
+
     .auth-container {
-      max-width: 440px;
-      width: 95%;
+      width: 440px;
       background: var(--bg-white);
       border-radius: 20px;
       box-shadow: var(--shadow-medium);
       backdrop-filter: blur(10px);
       border: 1px solid rgba(255, 255, 255, 0.2);
       overflow: hidden;
-      position: relative;
-      z-index: 1;
-      margin: 20px;
+      height: fit-content;
+      margin-right: auto;
+    }
+
+    .news-container {
+      width: 600px;
+      background: rgba(16, 185, 129, 0.85);
+      border-radius: 20px;
+      box-shadow: var(--shadow-medium);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      height: fit-content;
+      margin-left: auto;
     }
 
     .auth-header {
       background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
       color: white;
-      padding: 2.5rem 2rem;
+      padding: 2rem 2rem;
       text-align: center;
       position: relative;
     }
@@ -186,7 +211,44 @@ if (isset($_POST['register'])) {
     }
 
     .auth-body {
-      padding: 2.5rem 2rem;
+      padding: 2rem 2rem;
+    }
+
+    .news-header {
+      background: rgba(5, 150, 105, 0.9);
+      color: white;
+      padding: 1.5rem 2rem;
+      text-align: center;
+      position: relative;
+    }
+
+    .news-header::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    }
+
+    .news-header h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      position: relative;
+    }
+
+    .news-header p {
+      font-size: 0.9rem;
+      opacity: 0.9;
+      font-weight: 400;
+    }
+
+    .news-body {
+      padding: 1.5rem;
+      flex: 1;
+      overflow-y: auto;
     }
 
     .nav-tabs {
@@ -194,7 +256,7 @@ if (isset($_POST['register'])) {
       background: #f8fafc;
       border-radius: 12px;
       padding: 4px;
-      margin-bottom: 2rem;
+      margin-bottom: 1.5rem;
     }
 
     .nav-tabs .nav-item {
@@ -205,7 +267,7 @@ if (isset($_POST['register'])) {
     .nav-tabs .nav-link {
       border: none;
       border-radius: 10px;
-      padding: 0.875rem 1rem;
+      padding: 0.75rem 1rem;
       font-weight: 600;
       color: var(--text-light);
       transition: all 0.3s ease;
@@ -233,7 +295,7 @@ if (isset($_POST['register'])) {
     .form-control, .form-select {
       border: 2px solid var(--border-light);
       border-radius: 12px;
-      padding: 0.875rem 1rem;
+      padding: 0.75rem 1rem;
       font-size: 0.95rem;
       transition: all 0.3s ease;
       background: #fff;
@@ -259,7 +321,7 @@ if (isset($_POST['register'])) {
 
     .btn {
       border-radius: 12px;
-      padding: 0.875rem 1.5rem;
+      padding: 0.75rem 1.5rem;
       font-weight: 600;
       font-size: 0.95rem;
       border: none;
@@ -280,6 +342,19 @@ if (isset($_POST['register'])) {
 
     .btn-primary:active {
       transform: translateY(0);
+    }
+
+    .btn-success {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+
+    .btn-success:hover {
+      transform: translateY(-2px);
+      background: rgba(255, 255, 255, 0.3);
+      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
     }
 
     .alert {
@@ -332,24 +407,108 @@ if (isset($_POST['register'])) {
       }
     }
 
+    /* News Items */
+    .news-item {
+      padding: 1.25rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      transition: all 0.3s ease;
+      color: white;
+    }
+
+    .news-item:last-child {
+      border-bottom: none;
+    }
+
+    .news-item:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+    }
+
+    .news-title {
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      font-size: 1.05rem;
+    }
+
+    .news-date {
+      font-size: 0.75rem;
+      opacity: 0.8;
+      margin-bottom: 0.75rem;
+    }
+
+    .news-description {
+      opacity: 0.9;
+      font-size: 0.85rem;
+      margin-bottom: 1rem;
+    }
+
+    .news-link {
+      display: inline-flex;
+      align-items: center;
+      color: white;
+      font-weight: 500;
+      font-size: 0.85rem;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      opacity: 0.9;
+    }
+
+    .news-link:hover {
+      opacity: 1;
+      transform: translateX(3px);
+    }
+
+    .news-link i {
+      margin-left: 0.5rem;
+      transition: transform 0.3s ease;
+    }
+
+    .news-link:hover i {
+      transform: translateX(3px);
+    }
+
     /* Responsive Design */
-    @media (max-width: 480px) {
-      .auth-container {
-        margin: 10px;
+    @media (max-width: 1200px) {
+      .main-container {
+        flex-direction: column;
+        align-items: center;
+        gap: 1.5rem;
+      }
+      
+      .auth-container, .news-container {
+        width: 100%;
+        max-width: 600px;
+        margin: 0;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .auth-container, .news-container {
         border-radius: 16px;
       }
       
-      .auth-header {
-        padding: 2rem 1.5rem;
+      .auth-header, .news-header {
+        padding: 1.5rem 1.5rem;
       }
       
-      .auth-body {
-        padding: 2rem 1.5rem;
+      .auth-body, .news-body {
+        padding: 1.5rem 1.5rem;
       }
       
       .nav-tabs .nav-link {
         padding: 0.75rem 0.5rem;
         font-size: 0.9rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 10px;
+      }
+      
+      .auth-container, .news-container {
+        margin: 0;
+        border-radius: 12px;
       }
     }
 
@@ -380,110 +539,179 @@ if (isset($_POST['register'])) {
   </style>
 </head>
 <body>
-<div class="auth-container">
-  <!-- Header -->
-  <div class="auth-header">
-    <h1><i class="fas fa-flask me-2"></i>SISTEM PRAKTIKUM</h1>
-    <p>Laboratorium Teknik Informatika</p>
+<div class="main-container">
+  <!-- Login Container -->
+  <div class="auth-container">
+    <!-- Header -->
+    <div class="auth-header">
+      <h1><i class="fas fa-flask me-2"></i>SISTEM PRAKTIKUM</h1>
+      <p>Laboratorium Teknik Informatika</p>
+    </div>
+
+    <!-- Body -->
+    <div class="auth-body">
+      <?php if ($error): ?>
+        <div class="alert alert-danger">
+          <i class="fas fa-exclamation-circle me-2"></i><?= htmlspecialchars($error); ?>
+        </div>
+      <?php endif; ?>
+      
+      <?php if ($success): ?>
+        <div class="alert alert-success">
+          <i class="fas fa-check-circle me-2"></i><?= htmlspecialchars($success); ?>
+        </div>
+      <?php endif; ?>
+
+      <!-- Tabs -->
+      <ul class="nav nav-tabs" id="authTabs" role="tablist">
+        <li class="nav-item">
+          <button class="nav-link active" id="login-tab" data-bs-toggle="tab" data-bs-target="#login" type="button">
+            <i class="fas fa-sign-in-alt me-2"></i>Login
+          </button>
+        </li>
+        <li class="nav-item">
+          <button class="nav-link" id="register-tab" data-bs-toggle="tab" data-bs-target="#register" type="button">
+            <i class="fas fa-user-plus me-2"></i>Register
+          </button>
+        </li>
+      </ul>
+
+      <div class="tab-content mt-4">
+        <!-- Login -->
+        <div class="tab-pane fade show active" id="login" role="tabpanel">
+          <form method="POST" id="loginForm">
+            <input type="hidden" name="login" value="1">
+            
+            <div class="mb-3">
+              <label class="form-label">Username</label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="fas fa-user"></i></span>
+                <input type="text" class="form-control" name="username" placeholder="Masukkan username" required>
+              </div>
+            </div>
+            
+            <div class="mb-4">
+              <label class="form-label">Password</label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                <input type="password" class="form-control" name="password" placeholder="Masukkan password" required>
+              </div>
+              <div class="form-text text-end mt-2">
+                <a href="#" class="text-decoration-none">Lupa Kata Sandi?</a>
+              </div>
+            </div>
+            
+            <button type="submit" class="btn btn-primary w-100 py-2">
+              <i class="fas fa-sign-in-alt me-2"></i>Masuk ke Sistem
+            </button>
+          </form>
+        </div>
+
+        <!-- Register -->
+        <div class="tab-pane fade" id="register" role="tabpanel">
+          <form method="POST" id="registerForm">
+            <input type="hidden" name="register" value="1">
+            
+            <div class="mb-3">
+              <label class="form-label">Nama Lengkap</label>
+              <input type="text" name="nama" class="form-control" placeholder="Masukkan nama lengkap" required>
+            </div>
+            
+            <div class="mb-3">
+              <label class="form-label">Username</label>
+              <input type="text" name="username" class="form-control" placeholder="Buat username unik" required>
+            </div>
+            
+            <div class="mb-3">
+              <label class="form-label">Password</label>
+              <input type="password" name="password" class="form-control" placeholder="Buat password yang kuat" required>
+            </div>
+            
+            <!-- Input NIM -->
+            <div class="mb-3 nim-field" id="nimField">
+              <label class="form-label">NIM <span class="text-danger">*</span></label>
+              <input type="text" name="nim" class="form-control" placeholder="Masukkan NIM">
+              <div class="form-text">Wajib diisi untuk Asisten Praktikum</div>
+            </div>
+            
+            <div class="mb-4">
+              <label class="form-label">Role</label>
+              <select name="role" class="form-select" id="roleSelect" required>
+                <option value="">-- Pilih Role --</option>
+                <option value="admin">Admin</option>
+                <option value="staff_lab">Staff Lab</option>
+                <option value="staff_prodi">Staff Prodi</option>
+                <option value="asisten_praktikum">Asisten Praktikum</option>
+              </select>
+            </div>
+            
+            <button type="submit" class="btn btn-primary w-100 py-2">
+              <i class="fas fa-user-plus me-2"></i>Daftar Akun Baru
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <!-- Body -->
-  <div class="auth-body">
-    <?php if ($error): ?>
-        <div class="alert alert-danger">
-          <i class="fas fa-exclamation-circle me-2"></i><?= $error; ?>
-        </div>
-    <?php endif; ?>
-    <?php if ($success): ?>
-        <div class="alert alert-success">
-          <i class="fas fa-check-circle me-2"></i><?= $success; ?>
-        </div>
-    <?php endif; ?>
+  <!-- News Container -->
+  <div class="news-container">
+    <!-- Header -->
+    <div class="news-header">
+      <h2><i class="fas fa-newspaper me-2"></i>INFORMASI TERBARU</h2>
+      <p>Berita dan Pengumuman Sistem Praktikum</p>
+    </div>
 
-    <!-- Tabs -->
-    <ul class="nav nav-tabs" id="authTabs" role="tablist">
-      <li class="nav-item">
-        <button class="nav-link active" id="login-tab" data-bs-toggle="tab" data-bs-target="#login" type="button">
-          <i class="fas fa-sign-in-alt me-2"></i>Login
-        </button>
-      </li>
-      <li class="nav-item">
-        <button class="nav-link" id="register-tab" data-bs-toggle="tab" data-bs-target="#register" type="button">
-          <i class="fas fa-user-plus me-2"></i>Register
-        </button>
-      </li>
-    </ul>
-
-    <div class="tab-content mt-4">
-      <!-- Login -->
-      <div class="tab-pane fade show active" id="login" role="tabpanel">
-        <form method="POST" id="loginForm">
-          <input type="hidden" name="login" value="1">
-          
-          <div class="mb-3">
-            <label class="form-label">Username</label>
-            <div class="input-group">
-              <span class="input-group-text"><i class="fas fa-user"></i></span>
-              <input type="text" class="form-control" name="username" placeholder="Masukkan username" required>
-            </div>
-          </div>
-          
-          <div class="mb-4">
-            <label class="form-label">Password</label>
-            <div class="input-group">
-              <span class="input-group-text"><i class="fas fa-lock"></i></span>
-              <input type="password" class="form-control" name="password" placeholder="Masukkan password" required>
-            </div>
-          </div>
-          
-          <button type="submit" class="btn btn-primary w-100 py-2">
-            <i class="fas fa-sign-in-alt me-2"></i>Masuk ke Sistem
-          </button>
-        </form>
+    <!-- Body -->
+    <div class="news-body">
+      <div class="news-item">
+        <div class="news-title">Selamat Datang Kembali!</div>
+        <div class="news-date">27 Mei 2024 15:38</div>
+        <div class="news-description">
+          Sistem praktikum telah diperbarui dengan fitur-fitur terbaru untuk memudahkan proses belajar mengajar di laboratorium.
+        </div>
+        <a href="#" class="news-link">
+          Baca selengkapnya <i class="fas fa-arrow-right"></i>
+        </a>
       </div>
 
-      <!-- Register -->
-      <div class="tab-pane fade" id="register" role="tabpanel">
-        <form method="POST" id="registerForm">
-          <input type="hidden" name="register" value="1">
-          
-          <div class="mb-3">
-            <label class="form-label">Nama Lengkap</label>
-            <input type="text" name="nama" class="form-control" placeholder="Masukkan nama lengkap" required>
-          </div>
-          
-          <div class="mb-3">
-            <label class="form-label">Username</label>
-            <input type="text" name="username" class="form-control" placeholder="Buat username unik" required>
-          </div>
-          
-          <div class="mb-3">
-            <label class="form-label">Password</label>
-            <input type="password" name="password" class="form-control" placeholder="Buat password yang kuat" required>
-          </div>
-          
-          <!-- Input NIM -->
-          <div class="mb-3 nim-field" id="nimField">
-            <label class="form-label">NIM <span class="text-danger">*</span></label>
-            <input type="text" name="nim" class="form-control" placeholder="Masukkan NIM">
-            <div class="form-text">Wajib diisi untuk Asisten Praktikum</div>
-          </div>
-          
-          <div class="mb-4">
-            <label class="form-label">Role</label>
-            <select name="role" class="form-select" id="roleSelect" required>
-              <option value="">-- Pilih Role --</option>
-              <option value="admin">Admin</option>
-              <option value="staff_lab">Staff Lab</option>
-              <option value="staff_prodi">Staff Prodi</option>
-              <option value="asisten_praktikum">Asisten Praktikum</option>
-            </select>
-          </div>
-          
-          <button type="submit" class="btn btn-primary w-100 py-2">
-            <i class="fas fa-user-plus me-2"></i>Daftar Akun Baru
-          </button>
-        </form>
+      <div class="news-item">
+        <div class="news-title">Panduan Sinkronisasi Akun NeoSIAK</div>
+        <div class="news-date">27 Mei 2024 15:38</div>
+        <div class="news-description">
+          Siapa yang belum pernah sinkronisasi akun siak ke neosiak? Jika belum, bisa lihat panduan ini ya!
+        </div>
+        <a href="#" class="news-link">
+          Lihat panduan <i class="fas fa-arrow-right"></i>
+        </a>
+      </div>
+
+      <div class="news-item">
+        <div class="news-title">Daftar Buku Perpustakaan Online</div>
+        <div class="news-date">25 Mei 2024 10:15</div>
+        <div class="news-description">
+          Untuk kalian yang mau lihat daftar buku perpustakaan/skripsi/tesis online, bisa dicek disini ya!
+        </div>
+        <a href="#" class="news-link">
+          Lihat koleksi <i class="fas fa-arrow-right"></i>
+        </a>
+      </div>
+
+      <div class="news-item">
+        <div class="news-title">Panduan Pencarian MAC Address</div>
+        <div class="news-date">24 Mei 2024 14:20</div>
+        <div class="news-description">
+          Panduan lengkap untuk mencari MAC Address perangkat Anda untuk keperluan registrasi jaringan laboratorium.
+        </div>
+        <a href="#" class="news-link">
+          Lihat panduan <i class="fas fa-arrow-right"></i>
+        </a>
+      </div>
+
+      <div class="d-grid mt-3">
+        <button class="btn btn-success">
+          <i class="fas fa-list me-2"></i>Lihat Semua Informasi
+        </button>
       </div>
     </div>
   </div>
@@ -496,8 +724,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const roleSelect = document.getElementById('roleSelect');
     const nimField = document.getElementById('nimField');
     const nimInput = document.querySelector('input[name="nim"]');
-    const loginForm = document.getElementById('loginForm');
-    const registerForm = document.getElementById('registerForm');
 
     // Toggle NIM Field berdasarkan role
     function toggleNIMField() {
@@ -511,28 +737,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Loading state untuk form submission
-    function setLoadingState(form, isLoading) {
-        const submitBtn = form.querySelector('button[type="submit"]');
-        if (isLoading) {
-            submitBtn.classList.add('btn-loading');
-            submitBtn.disabled = true;
-        } else {
-            submitBtn.classList.remove('btn-loading');
-            submitBtn.disabled = false;
-        }
-    }
-
     // Event listeners
     roleSelect.addEventListener('change', toggleNIMField);
-    
-    loginForm.addEventListener('submit', function() {
-        setLoadingState(this, true);
-    });
-    
-    registerForm.addEventListener('submit', function() {
-        setLoadingState(this, true);
-    });
 
     // Auto focus pada input pertama saat tab berubah
     document.getElementById('authTabs').addEventListener('shown.bs.tab', function (e) {
