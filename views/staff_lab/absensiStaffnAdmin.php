@@ -39,11 +39,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $selected_jadwal = $_POST['jadwal_praktikum_id'] ?? '';
     $selected_pertemuan = $_POST['pertemuan'] ?? '';
 
-    
-
     if ($selected_jadwal && $selected_pertemuan) {
         $mahasiswa = $controller->getMahasiswaByJadwal($selected_jadwal);
-       $absensi_existing = $controller->getAbsensi($selected_jadwal, $selected_pertemuan);
+        $absensi_existing = $controller->getAbsensi($selected_jadwal, $selected_pertemuan);
         $detail_jadwal = $controller->getDetailJadwal($selected_jadwal);
 
         // CEK APAKAH ABSENSI SUDAH DIISI
@@ -100,6 +98,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             background: linear-gradient(45deg, #ff6b6b, #ee5a52);
             color: white;
         }
+        
+        .btn-rekap-pdf {
+            background: linear-gradient(45deg, #dc3545, #c82333);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            text-decoration: none;
+            display: inline-block;
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+
+        .btn-rekap-pdf:hover {
+            background: linear-gradient(45deg, #c82333, #bd2130);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            text-decoration: none;
+        }
+
+        .btn-rekap-pdf.btn-lg {
+            padding: 12px 24px;
+            font-size: 1.1rem;
+        }
+
+        .table-hover tbody tr:hover {
+            background-color: rgba(0, 0, 0, 0.02);
+        }
     </style>
 </head>
 
@@ -111,9 +137,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <h2 class="text-primary mb-1"><i class="fas fa-users-cog me-2"></i>Monitoring Absensi Praktikan</h2>
                 <p class="text-muted">Staff Lab & Admin - View & Edit Absensi</p>
             </div>
-            <a href="dashboard.php" class="btn btn-outline-secondary">
-                <i class="fas fa-arrow-left me-1"></i>Kembali ke Dashboard
-            </a>
+            <div class="d-flex gap-2">
+                <?php if (!empty($mahasiswa)): ?>
+                    <a href="generate_pdf_simple.php?jadwal_id=<?= $selected_jadwal ?>&pertemuan=<?= $selected_pertemuan ?>&praktikum=<?= urlencode($detail_jadwal['nama_praktikum'] ?? '') ?>&kelas=<?= $detail_jadwal['kelas'] ?? '' ?>" 
+                       class="btn btn-rekap-pdf" target="_blank">
+                        <i class="fas fa-file-pdf me-1"></i>Rekap Absensi PDF
+                    </a>
+                <?php endif; ?>
+                <a href="dashboard.php" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Kembali ke Dashboard
+                </a>
+            </div>
         </div>
 
         <!-- Alert Messages -->
@@ -154,7 +188,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="d-flex justify-content-between align-items-center">
                     <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Filter Data</h5>
                     <?php if (!empty($mahasiswa)): ?>
-                        <div>
+                        <div class="d-flex gap-2">
                             <?php if ($showRekap): ?>
                                 <button type="button" class="btn btn-warning btn-sm" onclick="toggleRekap()">
                                     <i class="fas fa-edit me-1"></i>Edit Absensi
@@ -191,16 +225,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </select>
                         </div>
 
-                       <!-- Pilih Pertemuan -->
-<div class="col-md-4">
-    <label class="form-label fw-semibold">Pertemuan</label>
-    <select class="form-select" name="pertemuan" required>
-        <option value="">-- Pilih Pertemuan --</option>
-        <?php for ($i = 1; $i <= 16; $i++): ?>
-            <option value="<?= $i ?>" <?= $selected_pertemuan == $i ? 'selected' : '' ?>>Pertemuan <?= $i ?></option>
-        <?php endfor; ?>
-    </select>
-</div>
+                        <!-- Pilih Pertemuan -->
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Pertemuan</label>
+                            <select class="form-select" name="pertemuan" required>
+                                <option value="">-- Pilih Pertemuan --</option>
+                                <?php for ($i = 1; $i <= 16; $i++): ?>
+                                    <option value="<?= $i ?>" <?= $selected_pertemuan == $i ? 'selected' : '' ?>>Pertemuan <?= $i ?></option>
+                                <?php endfor; ?>
+                            </select>
+                        </div>
+
                         <!-- Tombol Submit -->
                         <div class="col-md-2 d-flex align-items-end">
                             <button type="submit" class="btn btn-primary w-100">
@@ -274,22 +309,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 ?>
                                 <table class="table table-sm table-bordered">
                                     <tr class="table-success">
-                                        <th>hadir</th>
+                                        <th>Hadir</th>
                                         <td><?= $hadir ?> orang</td>
                                         <td><?= $total_mahasiswa > 0 ? round(($hadir / $total_mahasiswa) * 100, 1) : 0 ?>%</td>
                                     </tr>
                                     <tr class="table-warning">
-                                        <th>sakit</th>
+                                        <th>Sakit</th>
                                         <td><?= $sakit ?> orang</td>
                                         <td><?= $total_mahasiswa > 0 ? round(($sakit / $total_mahasiswa) * 100, 1) : 0 ?>%</td>
                                     </tr>
                                     <tr class="table-info">
-                                        <th>izin</th>
+                                        <th>Izin</th>
                                         <td><?= $izin ?> orang</td>
                                         <td><?= $total_mahasiswa > 0 ? round(($izin / $total_mahasiswa) * 100, 1) : 0 ?>%</td>
                                     </tr>
                                     <tr class="table-danger">
-                                        <th>alfa</th>
+                                        <th>Alfa</th>
                                         <td><?= $alfa ?> orang</td>
                                         <td><?= $total_mahasiswa > 0 ? round(($alfa / $total_mahasiswa) * 100, 1) : 0 ?>%</td>
                                     </tr>
@@ -342,10 +377,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                                     <select name="absensi[<?= $mhs['id'] ?>][status]"
                                                         class="form-select form-select-sm"
                                                         <?= $showRekap ? 'disabled' : '' ?>>
-                                                        <option value="hadir" <?= ($data['status'] ?? '') == 'hadir' ? 'selected' : '' ?>>hadir</option>
-                                                        <option value="sakit" <?= ($data['status'] ?? '') == 'sakit' ? 'selected' : '' ?>>sakit</option>
-                                                        <option value="izin" <?= ($data['status'] ?? '') == 'izin' ? 'selected' : '' ?>>izin</option>
-                                                        <option value="alfa" <?= ($data['status'] ?? '') == 'alfa' ? 'selected' : '' ?>>alfa</option>
+                                                        <option value="hadir" <?= ($data['status'] ?? '') == 'hadir' ? 'selected' : '' ?>>Hadir</option>
+                                                        <option value="sakit" <?= ($data['status'] ?? '') == 'sakit' ? 'selected' : '' ?>>Sakit</option>
+                                                        <option value="izin" <?= ($data['status'] ?? '') == 'izin' ? 'selected' : '' ?>>Izin</option>
+                                                        <option value="alfa" <?= ($data['status'] ?? '') == 'alfa' ? 'selected' : '' ?>>Alfa</option>
                                                     </select>
                                                 </div>
 
@@ -425,6 +460,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </form>
                 </div>
             </div>
+
+            <!-- Tombol Rekap PDF di bawah form -->
+            <div class="text-center mt-4">
+                <a href="generate_pdf_simple.php?jadwal_id=<?= $selected_jadwal ?>&pertemuan=<?= $selected_pertemuan ?>&praktikum=<?= urlencode($detail_jadwal['nama_praktikum'] ?? '') ?>&kelas=<?= $detail_jadwal['kelas'] ?? '' ?>" 
+                   class="btn btn-rekap-pdf btn-lg" target="_blank">
+                    <i class="fas fa-file-pdf me-2"></i>Generate Rekap Absensi PDF
+                </a>
+                <p class="text-muted mt-2">Klik tombol di atas untuk membuka rekap absensi. Gunakan fitur "Print → Save as PDF" di browser untuk menyimpan sebagai PDF.</p>
+            </div>
+
         <?php elseif ($_SERVER['REQUEST_METHOD'] === 'POST'): ?>
             <div class="alert alert-warning text-center py-4">
                 <i class="fas fa-users-slash fa-3x text-warning mb-3"></i>

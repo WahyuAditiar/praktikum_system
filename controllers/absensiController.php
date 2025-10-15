@@ -7,11 +7,13 @@ class AbsensiController {
     private $role;
     private $groupModel;
     private $db;
+    private $userId;
 
-    public function __construct($db, $role = null) {
+    public function __construct($db, $role = null, $userId = null) {
         $this->db = $db;
         $this->model = new AbsensiModel($db);
         $this->role = $role;
+        $this->userId = $userId ?? ($_SESSION['user_id'] ?? null);
         $this->groupModel = new GroupModel($db);
     }
 
@@ -24,13 +26,13 @@ class AbsensiController {
         return $this->model->validasiKodeRandom($jadwal_id, $kode_random);
     }
 
-    // ✅ PERBAIKI FUNCTION INI - VERSI FIXED
+    // ✅ FIXED: Function untuk mendapatkan mahasiswa berdasarkan jadwal dan role
     public function getMahasiswaByJadwal($jadwal_id) {
         error_log("🎯 getMahasiswaByJadwal - Role: {$this->role}, Jadwal: {$jadwal_id}");
         
         // JIKA ASISTEN PRAKTIKUM, FILTER BY GROUP
         if ($this->role == 'asisten_praktikum') {
-            $user_id = $_SESSION['user_id'] ?? null;
+            $user_id = $this->userId;
             
             if ($user_id) {
                 // CARI GROUP ASISTEN DI JADWAL INI
@@ -53,49 +55,7 @@ class AbsensiController {
         return $this->getAllMahasiswaByJadwal($jadwal_id);
     }
 
-    // ✅ FUNCTION BARU: CARI GROUP ASISTEN DARI TABEL ASSIGNMENT
-    private function getAsprakGroupFromAssignment($user_id, $jadwal_id) {
-        try {
-            // Cari asisten_praktikum_id dari user_id
-            $stmt = $this->db->prepare("
-                SELECT id FROM asisten_praktikum WHERE user_id = ? LIMIT 1
-            ");
-            $stmt->execute([$user_id]);
-            $asprak = $stmt->fetch(PDO::FETCH_ASSOC);
-            
-            if (!$asprak) {
-                error_log("Asisten praktikum tidak ditemukan untuk user_id: $user_id");
-                return null;
-            }
-            
-            $asprak_id = $asprak['id'];
-            
-            // Cari group assignment untuk asisten ini di jadwal tertentu
-            $stmt = $this->db->prepare("
-                SELECT group_number 
-                FROM praktikum_group_assignment 
-                WHERE jadwal_praktikum_id = ? 
-                AND entity_type = 'asisten' 
-                AND entity_id = ?
-                LIMIT 1
-            ");
-            $stmt->execute([$jadwal_id, $asprak_id]);
-            $assignment = $stmt->fetch(PDO::FETCH_ASSOC);
-            
-            if ($assignment) {
-                return $assignment['group_number'];
-            }
-            
-            error_log("Tidak ada assignment untuk asisten_id: $asprak_id di jadwal: $jadwal_id");
-            return null;
-            
-        } catch (PDOException $e) {
-            error_log("Error in getAsprakGroupFromAssignment: " . $e->getMessage());
-            return null;
-        }
-    }
-
-    // ✅ PERBAIKI FUNCTION INI - AMBIL MAHASISWA BERDASARKAN KELAS
+    // ✅ FUNCTION: AMBIL SEMUA MAHASISWA BERDASARKAN KELAS (UNTUK STAFF/ADMIN)
     private function getAllMahasiswaByJadwal($jadwal_id) {
         try {
             // Dapatkan detail jadwal untuk mengetahui praktikum_id dan kelas
@@ -127,11 +87,11 @@ class AbsensiController {
         }
     }
 
-    // ✅ PERBAIKI: GANTI $this->conn MENJADI $this->db
+    // ✅ FIXED: Function untuk mendapatkan absensi
     public function getAbsensi($jadwal_id, $pertemuan, $group_id = null) {
         try {
             if ($group_id) {
-                // Filter by group - PERBAIKAN: gunakan $this->db
+                // Filter by group
                 $query = "SELECT * FROM absensi 
                          WHERE jadwal_praktikum_id = ? 
                          AND pertemuan = ? 
@@ -139,7 +99,7 @@ class AbsensiController {
                 $stmt = $this->db->prepare($query);
                 $stmt->execute([$jadwal_id, $pertemuan, $group_id]);
             } else {
-                // Tanpa filter group (backward compatibility)
+                // Tanpa filter group (untuk staff/admin)
                 $query = "SELECT * FROM absensi 
                          WHERE jadwal_praktikum_id = ? 
                          AND pertemuan = ?";
@@ -167,177 +127,162 @@ class AbsensiController {
     }
 
     /* ------------------ handling form POST (router memanggil ini) ------------------ */
-    // ✅ PERBAIKI: GANTI $this->conn MENJADI $this->db
-   // ✅ PERBAIKI METHOD simpan() - SESUAIKAN DENGAN STRUKTUR TABEL
-// ✅ PERBAIKI METHOD simpan() - HANDLE FOREIGN KEY CONSTRAINT
-public function simpan() {
-    try {
-        $jadwal_id = $_POST['jadwal_praktikum_id'] ?? '';
-        $pertemuan = $_POST['pertemuan'] ?? '';
-        $tanggal = $_POST['tanggal'] ?? date('Y-m-d');
-        $absensi_data = $_POST['absensi'] ?? [];
-        
-        // Dapatkan group_id dari ASPRAK yang login
-        $groupModel = new GroupModel($this->db);
-        $group_id = $groupModel->getAsprakGroup($_SESSION['user_id'], $jadwal_id);
-        
-        if (!$group_id) {
-            $_SESSION['error'] = "Anda belum ditugaskan di group manapun!";
+    // ✅ FIXED: Method simpan() untuk semua role
+    public function simpan() {
+        try {
+            $jadwal_id = $_POST['jadwal_praktikum_id'] ?? '';
+            $pertemuan = $_POST['pertemuan'] ?? '';
+            $tanggal = $_POST['tanggal'] ?? date('Y-m-d');
+            $absensi_data = $_POST['absensi'] ?? [];
+            
+            // ✅ PERBEDAAN BERDASARKAN ROLE
+            $group_id = null;
+            
+            if ($this->role == 'asisten_praktikum') {
+                // ASISTEN: Dapatkan group_id dari ASPRAK yang login
+                $group_id = $this->groupModel->getAsprakGroup($this->userId, $jadwal_id);
+                
+                if (!$group_id) {
+                    $_SESSION['error'] = "Anda belum ditugaskan di group manapun!";
+                    header("Location: {$_SERVER['HTTP_REFERER']}");
+                    exit;
+                }
+            }
+            // STAFF/ADMIN: Tidak perlu group_id, bisa akses semua
+            
+            // Dapatkan praktikum_id dari jadwal
+            $detail_jadwal = $this->getDetailJadwal($jadwal_id);
+            if (!$detail_jadwal || !isset($detail_jadwal['praktikum_id'])) {
+                $_SESSION['error'] = "Tidak dapat menemukan data praktikum untuk jadwal ini!";
+                header("Location: {$_SERVER['HTTP_REFERER']}");
+                exit;
+            }
+            
+            $praktikum_id = $detail_jadwal['praktikum_id'];
+            error_log("🔍 Praktikum ID: $praktikum_id, Jadwal ID: $jadwal_id, Role: {$this->role}, Group: $group_id");
+            
+            // ✅ FILTER MAHASISWA BERDASARKAN ROLE
+            $mahasiswa_to_save = [];
+            
+            if ($this->role == 'asisten_praktikum' && $group_id) {
+                // ASISTEN: Hanya simpan untuk mahasiswa di group ini
+                $mahasiswa_in_group = $this->groupModel->getMahasiswaByGroup($jadwal_id, $group_id);
+                $mahasiswa_to_save = array_column($mahasiswa_in_group, 'id');
+            } else {
+                // STAFF/ADMIN: Simpan untuk semua mahasiswa yang dipilih
+                $mahasiswa_to_save = array_keys($absensi_data);
+            }
+            
+            error_log("📊 Mahasiswa to save: " . count($mahasiswa_to_save));
+            
+            if (!empty($mahasiswa_to_save)) {
+                // Hapus absensi lama
+                $placeholders = str_repeat('?,', count($mahasiswa_to_save) - 1) . '?';
+                
+                if ($this->role == 'asisten_praktikum' && $group_id) {
+                    // ASISTEN: Hapus berdasarkan group
+                    $deleteQuery = "DELETE FROM absensi 
+                                   WHERE jadwal_praktikum_id = ? 
+                                   AND pertemuan = ? 
+                                   AND group_id = ?
+                                   AND mahasiswa_id IN ($placeholders)";
+                    $deleteParams = array_merge([$jadwal_id, $pertemuan, $group_id], $mahasiswa_to_save);
+                } else {
+                    // STAFF/ADMIN: Hapus tanpa group
+                    $deleteQuery = "DELETE FROM absensi 
+                                   WHERE jadwal_praktikum_id = ? 
+                                   AND pertemuan = ? 
+                                   AND mahasiswa_id IN ($placeholders)";
+                    $deleteParams = array_merge([$jadwal_id, $pertemuan], $mahasiswa_to_save);
+                }
+                
+                $deleteStmt = $this->db->prepare($deleteQuery);
+                $deleteStmt->execute($deleteParams);
+                
+                error_log("🗑️ Deleted existing absensi");
+            }
+            
+            // CEK STRUKTUR TABEL ABSENSI
+            $checkTableQuery = "SHOW COLUMNS FROM absensi";
+            $checkStmt = $this->db->prepare($checkTableQuery);
+            $checkStmt->execute();
+            $columns = $checkStmt->fetchAll(PDO::FETCH_COLUMN);
+            
+            error_log("📋 Columns in absensi table: " . implode(', ', $columns));
+            
+            $hasPraktikumId = in_array('praktikum_id', $columns);
+            $hasGroupId = in_array('group_id', $columns);
+            
+            // SIMPAN ABSENSI BARU
+            $saved_count = 0;
+            
+            foreach ($absensi_data as $mahasiswa_id => $data) {
+                // ✅ VALIDASI: Untuk asisten, hanya simpan mahasiswa di groupnya
+                if ($this->role == 'asisten_praktikum' && !in_array($mahasiswa_id, $mahasiswa_to_save)) {
+                    continue;
+                }
+                
+                $status = $data['status'] ?? 'alfa';
+                $keterangan = $data['keterangan'] ?? '';
+                
+                // Bangguery INSERT berdasarkan struktur tabel
+                if ($hasPraktikumId && $hasGroupId) {
+                    $insertQuery = "INSERT INTO absensi 
+                                   (praktikum_id, jadwal_praktikum_id, pertemuan, group_id, mahasiswa_id, status, keterangan, tanggal) 
+                                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+                    $insertParams = [
+                        $praktikum_id, $jadwal_id, $pertemuan, $group_id, 
+                        $mahasiswa_id, $status, $keterangan, $tanggal
+                    ];
+                } elseif ($hasPraktikumId && !$hasGroupId) {
+                    $insertQuery = "INSERT INTO absensi 
+                                   (praktikum_id, jadwal_praktikum_id, pertemuan, mahasiswa_id, status, keterangan, tanggal) 
+                                   VALUES (?, ?, ?, ?, ?, ?, ?)";
+                    $insertParams = [
+                        $praktikum_id, $jadwal_id, $pertemuan, 
+                        $mahasiswa_id, $status, $keterangan, $tanggal
+                    ];
+                } elseif (!$hasPraktikumId && $hasGroupId) {
+                    $insertQuery = "INSERT INTO absensi 
+                                   (jadwal_praktikum_id, pertemuan, group_id, mahasiswa_id, status, keterangan, tanggal) 
+                                   VALUES (?, ?, ?, ?, ?, ?, ?)";
+                    $insertParams = [
+                        $jadwal_id, $pertemuan, $group_id, 
+                        $mahasiswa_id, $status, $keterangan, $tanggal
+                    ];
+                } else {
+                    $insertQuery = "INSERT INTO absensi 
+                                   (jadwal_praktikum_id, pertemuan, mahasiswa_id, status, keterangan, tanggal) 
+                                   VALUES (?, ?, ?, ?, ?, ?)";
+                    $insertParams = [
+                        $jadwal_id, $pertemuan, 
+                        $mahasiswa_id, $status, $keterangan, $tanggal
+                    ];
+                }
+                
+                $insertStmt = $this->db->prepare($insertQuery);
+                $insertStmt->execute($insertParams);
+                $saved_count++;
+            }
+            
+            error_log("💾 Saved $saved_count attendance records");
+            
+            $success_message = "Absensi berhasil disimpan! ($saved_count mahasiswa)";
+            if ($this->role == 'asisten_praktikum' && $group_id) {
+                $success_message = "Absensi berhasil disimpan untuk Group $group_id! ($saved_count mahasiswa)";
+            }
+            
+            $_SESSION['success'] = $success_message;
+            header("Location: {$_SERVER['HTTP_REFERER']}");
+            exit;
+            
+        } catch (PDOException $e) {
+            error_log("❌ Error in simpan absensi: " . $e->getMessage());
+            $_SESSION['error'] = "Gagal menyimpan absensi: " . $e->getMessage();
             header("Location: {$_SERVER['HTTP_REFERER']}");
             exit;
         }
-        
-        // Dapatkan praktikum_id dari jadwal
-        $detail_jadwal = $this->getDetailJadwal($jadwal_id);
-        if (!$detail_jadwal || !isset($detail_jadwal['praktikum_id'])) {
-            $_SESSION['error'] = "Tidak dapat menemukan data praktikum untuk jadwal ini!";
-            header("Location: {$_SERVER['HTTP_REFERER']}");
-            exit;
-        }
-        
-        $praktikum_id = $detail_jadwal['praktikum_id'];
-        error_log("🔍 Praktikum ID: $praktikum_id, Jadwal ID: $jadwal_id");
-        
-        // Hanya simpan untuk mahasiswa di group ini
-        $mahasiswa_in_group = $groupModel->getMahasiswaByGroup($jadwal_id, $group_id);
-        $mahasiswa_ids = array_column($mahasiswa_in_group, 'id');
-        
-        error_log("📊 Mahasiswa in group $group_id: " . count($mahasiswa_ids));
-        
-        if (!empty($mahasiswa_ids)) {
-            // Hapus hanya absensi untuk mahasiswa di group ini
-            $placeholders = str_repeat('?,', count($mahasiswa_ids) - 1) . '?';
-            $deleteQuery = "DELETE FROM absensi 
-                           WHERE jadwal_praktikum_id = ? 
-                           AND pertemuan = ? 
-                           AND mahasiswa_id IN ($placeholders)";
-            
-            $deleteParams = array_merge([$jadwal_id, $pertemuan], $mahasiswa_ids);
-            $deleteStmt = $this->db->prepare($deleteQuery);
-            $deleteStmt->execute($deleteParams);
-            
-            error_log("🗑️ Deleted existing absensi for group $group_id");
-        }
-        
-        // CEK STRUKTUR TABEL ABSENSI TERLEBIH DAHULU
-        $checkTableQuery = "SHOW COLUMNS FROM absensi";
-        $checkStmt = $this->db->prepare($checkTableQuery);
-        $checkStmt->execute();
-        $columns = $checkStmt->fetchAll(PDO::FETCH_COLUMN);
-        
-        error_log("📋 Columns in absensi table: " . implode(', ', $columns));
-        
-        $hasPraktikumId = in_array('praktikum_id', $columns);
-        $hasGroupId = in_array('group_id', $columns);
-        
-        error_log("🔍 Table has praktikum_id: " . ($hasPraktikumId ? 'YES' : 'NO'));
-        error_log("🔍 Table has group_id: " . ($hasGroupId ? 'YES' : 'NO'));
-        
-        // SIMPAN ABSENSI BARU DENGAN STRUCTURE YANG SESUAI
-        $saved_count = 0;
-        
-        if ($hasPraktikumId && $hasGroupId) {
-            // ✅ VERSI 1: Dengan praktikum_id DAN group_id
-            $insertQuery = "INSERT INTO absensi 
-                           (praktikum_id, jadwal_praktikum_id, pertemuan, group_id, mahasiswa_id, status, keterangan, tanggal) 
-                           VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-            $insertStmt = $this->db->prepare($insertQuery);
-            
-            foreach ($absensi_data as $mahasiswa_id => $data) {
-                if (in_array($mahasiswa_id, $mahasiswa_ids)) {
-                    $insertStmt->execute([
-                        $praktikum_id,
-                        $jadwal_id,
-                        $pertemuan,
-                        $group_id,
-                        $mahasiswa_id,
-                        $data['status'] ?? 'alfa',
-                        $data['keterangan'] ?? '',
-                        $tanggal
-                    ]);
-                    $saved_count++;
-                }
-            }
-            
-        } elseif ($hasPraktikumId && !$hasGroupId) {
-            // ✅ VERSI 2: Hanya dengan praktikum_id (tanpa group_id)
-            $insertQuery = "INSERT INTO absensi 
-                           (praktikum_id, jadwal_praktikum_id, pertemuan, mahasiswa_id, status, keterangan, tanggal) 
-                           VALUES (?, ?, ?, ?, ?, ?, ?)";
-            $insertStmt = $this->db->prepare($insertQuery);
-            
-            foreach ($absensi_data as $mahasiswa_id => $data) {
-                if (in_array($mahasiswa_id, $mahasiswa_ids)) {
-                    $insertStmt->execute([
-                        $praktikum_id,
-                        $jadwal_id,
-                        $pertemuan,
-                        $mahasiswa_id,
-                        $data['status'] ?? 'alfa',
-                        $data['keterangan'] ?? '',
-                        $tanggal
-                    ]);
-                    $saved_count++;
-                }
-            }
-            
-        } elseif (!$hasPraktikumId && $hasGroupId) {
-            // ✅ VERSI 3: Hanya dengan group_id (tanpa praktikum_id)
-            $insertQuery = "INSERT INTO absensi 
-                           (jadwal_praktikum_id, pertemuan, group_id, mahasiswa_id, status, keterangan, tanggal) 
-                           VALUES (?, ?, ?, ?, ?, ?, ?)";
-            $insertStmt = $this->db->prepare($insertQuery);
-            
-            foreach ($absensi_data as $mahasiswa_id => $data) {
-                if (in_array($mahasiswa_id, $mahasiswa_ids)) {
-                    $insertStmt->execute([
-                        $jadwal_id,
-                        $pertemuan,
-                        $group_id,
-                        $mahasiswa_id,
-                        $data['status'] ?? 'alfa',
-                        $data['keterangan'] ?? '',
-                        $tanggal
-                    ]);
-                    $saved_count++;
-                }
-            }
-            
-        } else {
-            // ✅ VERSI 4: Tanpa praktikum_id DAN tanpa group_id
-            $insertQuery = "INSERT INTO absensi 
-                           (jadwal_praktikum_id, pertemuan, mahasiswa_id, status, keterangan, tanggal) 
-                           VALUES (?, ?, ?, ?, ?, ?)";
-            $insertStmt = $this->db->prepare($insertQuery);
-            
-            foreach ($absensi_data as $mahasiswa_id => $data) {
-                if (in_array($mahasiswa_id, $mahasiswa_ids)) {
-                    $insertStmt->execute([
-                        $jadwal_id,
-                        $pertemuan,
-                        $mahasiswa_id,
-                        $data['status'] ?? 'alfa',
-                        $data['keterangan'] ?? '',
-                        $tanggal
-                    ]);
-                    $saved_count++;
-                }
-            }
-        }
-        
-        error_log("💾 Saved $saved_count attendance records for group $group_id");
-        
-        $_SESSION['success'] = "Absensi berhasil disimpan untuk Group $group_id! ($saved_count mahasiswa)";
-        header("Location: {$_SERVER['HTTP_REFERER']}");
-        exit;
-        
-    } catch (PDOException $e) {
-        error_log("❌ Error in simpan absensi: " . $e->getMessage());
-        $_SESSION['error'] = "Gagal menyimpan absensi: " . $e->getMessage();
-        header("Location: {$_SERVER['HTTP_REFERER']}");
-        exit;
     }
-}
 
     /* ------------------ endpoint AJAX (opsional) ------------------ */
     public function ajaxValidateKodeRandom() {
@@ -508,21 +453,120 @@ public function simpan() {
         }
     }
 
-    public function getMahasiswaByJadwalAndGroup($jadwal_id, $group_id) {
+    // Method untuk rekap statistik
+    public function getRekapPerPraktikumKelas($praktikum_id = null, $kelas = null) {
         try {
-            $query = "SELECT m.* FROM mahasiswa m 
-                      INNER JOIN praktikum_group_assignment pga ON m.id = pga.entity_id 
-                      WHERE pga.jadwal_praktikum_id = ? 
-                      AND pga.entity_type = 'mahasiswa' 
-                      AND pga.group_number = ?
-                      ORDER BY m.nim";
+            $query = "
+                SELECT 
+                    p.nama_praktikum,
+                    m.kelas,
+                    m.nim,
+                    m.nama,
+                    COUNT(CASE WHEN a.status = 'hadir' THEN 1 END) as total_hadir,
+                    COUNT(CASE WHEN a.status = 'sakit' THEN 1 END) as total_sakit,
+                    COUNT(CASE WHEN a.status = 'izin' THEN 1 END) as total_izin,
+                    COUNT(CASE WHEN a.status = 'alfa' THEN 1 END) as total_alfa
+                FROM mahasiswa m
+                INNER JOIN praktikum p ON m.praktikum_id = p.id
+                LEFT JOIN absensi a ON m.id = a.mahasiswa_id
+                WHERE p.status = 'aktif'
+            ";
+
+            $params = [];
             
+            if ($praktikum_id) {
+                $query .= " AND m.praktikum_id = ?";
+                $params[] = $praktikum_id;
+            }
+            
+            if ($kelas) {
+                $query .= " AND m.kelas = ?";
+                $params[] = $kelas;
+            }
+
+            $query .= " GROUP BY m.id, p.nama_praktikum, m.kelas, m.nim, m.nama
+                        ORDER BY p.nama_praktikum, m.kelas, m.nim";
+
             $stmt = $this->db->prepare($query);
-            $stmt->execute([$jadwal_id, $group_id]);
+            $stmt->execute($params);
+            
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
             
         } catch (PDOException $e) {
-            error_log("Error in getMahasiswaByJadwalAndGroup: " . $e->getMessage());
+            error_log("Error in getRekapPerPraktikumKelas: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function getStatistikKehadiran($praktikum_id = null, $kelas = null) {
+        try {
+            $query = "
+                SELECT 
+                    p.nama_praktikum,
+                    m.kelas,
+                    COUNT(DISTINCT m.id) as total_mahasiswa,
+                    COUNT(CASE WHEN a.status = 'hadir' THEN 1 END) as total_hadir,
+                    COUNT(CASE WHEN a.status = 'sakit' THEN 1 END) as total_sakit,
+                    COUNT(CASE WHEN a.status = 'izin' THEN 1 END) as total_izin,
+                    COUNT(CASE WHEN a.status = 'alfa' THEN 1 END) as total_alfa
+                FROM mahasiswa m
+                INNER JOIN praktikum p ON m.praktikum_id = p.id
+                LEFT JOIN absensi a ON m.id = a.mahasiswa_id
+                WHERE p.status = 'aktif'
+            ";
+
+            $params = [];
+            
+            if ($praktikum_id) {
+                $query .= " AND m.praktikum_id = ?";
+                $params[] = $praktikum_id;
+            }
+            
+            if ($kelas) {
+                $query .= " AND m.kelas = ?";
+                $params[] = $kelas;
+            }
+
+            $query .= " GROUP BY p.nama_praktikum, m.kelas
+                        ORDER BY p.nama_praktikum, m.kelas";
+
+            $stmt = $this->db->prepare($query);
+            $stmt->execute($params);
+            
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+        } catch (PDOException $e) {
+            error_log("Error in getStatistikKehadiran: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function getRekapPerPertemuan($jadwal_id, $pertemuan) {
+        try {
+            $query = "
+                SELECT 
+                    m.nim,
+                    m.nama,
+                    a.status,
+                    a.keterangan,
+                    a.tanggal,
+                    p.nama_praktikum,
+                    jp.kelas
+                FROM absensi a
+                INNER JOIN mahasiswa m ON a.mahasiswa_id = m.id
+                INNER JOIN praktikum p ON a.praktikum_id = p.id
+                INNER JOIN jadwal_praktikum jp ON a.jadwal_praktikum_id = jp.id
+                WHERE a.jadwal_praktikum_id = ? AND a.pertemuan = ?
+                ORDER BY m.nim
+            ";
+            
+            $stmt = $this->db->prepare($query);
+            $stmt->execute([$jadwal_id, $pertemuan]);
+            
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+        } catch (PDOException $e) {
+            error_log("Error in getRekapPerPertemuan: " . $e->getMessage());
             return [];
         }
     }
